@@ -1,0 +1,56 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+namespace Minesweeper.Network
+{
+    internal class InputNeuron : INeuronInput
+    {
+        [JsonIgnore]
+        public float Value { get; set; }
+
+        internal readonly sbyte
+            OffsetX = 0,
+            OffsetY = 0;
+
+        [JsonInclude]
+        public List<Connection> Outs { get; set; } = new();
+
+        public InputNeuron() { }
+
+        internal InputNeuron(sbyte x, sbyte y)
+        {
+            OffsetX = x;
+            OffsetY = y;
+        }
+    }
+
+    internal class HiddenNeuron : INeuronInput, INeuronOutput
+    {
+        [JsonIgnore]
+        public float Value { get; set; }
+
+        [JsonInclude]
+        public int Layer;
+
+        [JsonInclude]
+        public byte FunctionIndex;
+
+        [JsonInclude]
+        public List<Connection> Ins { get; set; } = new();
+
+        [JsonInclude]
+        public List<Connection> Outs { get; set; } = new();
+
+        internal Func<float, float> ActivationFunction
+        {
+            get => AI.ActivationFunctions[FunctionIndex];
+        }
+    }
+
+    internal class OutputNeuron : INeuronOutput
+    {
+        [JsonInclude]
+        public List<Connection> Ins { get; set; } = new();
+    }
+}
