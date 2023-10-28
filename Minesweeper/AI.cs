@@ -113,7 +113,7 @@ namespace Minesweeper
 
         private void Mix(NeuralNetwork killed)
         {
-            int hiddenLength = 0;
+            int hiddenLength = killed.Hidden.Count;
 
             if (killed.Hidden.Count > best.Hidden.Count)
             {
@@ -127,12 +127,12 @@ namespace Minesweeper
             else if (killed.Hidden.Count < best.Hidden.Count)
             {
                 killed.AddHidden(random);
-                hiddenLength = killed.Hidden.Count;
+                ++hiddenLength;
             }
 
             for (int i = 0; i < hiddenLength; ++i)
             {
-                int outsLength = 0;
+                int outsLength = killed.Hidden[i].Outs.Count;
 
                 if (killed.Hidden[i].Outs.Count > best.Hidden[i].Outs.Count)
                 {
@@ -142,13 +142,12 @@ namespace Minesweeper
                 else if (killed.Hidden[i].Outs.Count < best.Hidden[i].Outs.Count)
                 {
                     killed.AddNeuronOut(random, killed.Hidden[i]);
-                    outsLength = killed.Hidden[i].Outs.Count;
+                    ++outsLength;
                 }
 
                 for (int j = 0; j < outsLength; ++j)
                 {
-                    float weightSum = killed.Hidden[i].Outs[j].Weight + best.Hidden[i].Outs[j].Weight;
-                    killed.Hidden[i].Outs[j].Weight = weightSum / 2;
+                    killed.Hidden[i].Outs[j].Weight = (killed.Hidden[i].Outs[j].Weight + best.Hidden[i].Outs[j].Weight) / 2;
                 }
 
                 if (random.Next(2) == 0)
@@ -159,7 +158,7 @@ namespace Minesweeper
 
             for (byte i = 0; i < 80; ++i)
             {
-                int outsLength = 0;
+                int outsLength = killed.Inputs[i].Outs.Count;
 
                 if (killed.Inputs[i].Outs.Count > best.Inputs[i].Outs.Count)
                 {
@@ -169,18 +168,15 @@ namespace Minesweeper
                 else if (killed.Inputs[i].Outs.Count < best.Inputs[i].Outs.Count)
                 {
                     int outputIndex = random.Next(killed.Hidden.Count + 1);
-                    IOutputNeuron output = outputIndex == killed.Hidden.Count ?
-                        killed.Output : killed.Hidden[outputIndex];
 
-                    _ = new Connection(killed.Inputs[i], output);
+                    _ = new Connection(killed.Inputs[i], outputIndex == killed.Hidden.Count ? killed.Output : killed.Hidden[outputIndex]);
 
-                    outsLength = killed.Inputs[i].Outs.Count;
+                    ++outsLength;
                 }
 
                 for (int j = 0; j < outsLength; ++j)
                 {
-                    float weightSum = killed.Inputs[i].Outs[j].Weight + best.Inputs[i].Outs[j].Weight;
-                    killed.Inputs[i].Outs[j].Weight = weightSum / 2;
+                    killed.Inputs[i].Outs[j].Weight = (killed.Inputs[i].Outs[j].Weight + best.Inputs[i].Outs[j].Weight) / 2;
                 }
             }
         }
@@ -223,8 +219,7 @@ namespace Minesweeper
                                         && inputX < _mainWindow.GameGrid.Columns
                                         && inputY < _mainWindow.GameGrid.Rows)
                                     {
-                                        Square square = _mainWindow.Grid[inputX, inputY];
-                                        input.Value = Images.GridMaker[square.Source];
+                                        input.Value = Images.GridMaker[_mainWindow.Grid[inputX, inputY].Source];
                                     }
                                 }
 
