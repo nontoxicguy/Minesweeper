@@ -20,7 +20,7 @@ namespace Minesweeper.Network
                     return;
                 case int i when i < 28:
                     IEnumerable<Connection> connections = Inputs
-                        .Cast<INeuronInput>()
+                        .Cast<IInputNeuron>()
                         .Concat(Hidden)
                         .SelectMany(i => i.Outs);
 
@@ -57,13 +57,13 @@ namespace Minesweeper.Network
             Hidden.Add(added);
 
             IEnumerable<Connection> connections = Inputs
-                .Cast<INeuronInput>()
+                .Cast<IInputNeuron>()
                 .Concat(Hidden)
                 .SelectMany(n => n.Outs);
             if (connections.Any())
             {
                 Connection cutted = connections.ElementAt(random.Next(connections.Count()));
-                INeuronOutput output = cutted.Output;
+                IOutputNeuron output = cutted.Output;
 
                 output.Ins.Remove(cutted);
                 cutted.Output = added;
@@ -75,8 +75,8 @@ namespace Minesweeper.Network
 
         private void AddConnection(Random random)
         {
-            IEnumerable<INeuronInput> inputs = Inputs
-                .Cast<INeuronInput>()
+            IEnumerable<IInputNeuron> inputs = Inputs
+                .Cast<IInputNeuron>()
                 .Concat(Hidden);
 
             if (!inputs.Any())
@@ -85,7 +85,7 @@ namespace Minesweeper.Network
                 return;
             }
 
-            INeuronInput input = inputs.ElementAt(random.Next(inputs.Count()));
+            IInputNeuron input = inputs.ElementAt(random.Next(inputs.Count()));
 
             if (input is HiddenNeuron hidden)
             {
@@ -95,7 +95,7 @@ namespace Minesweeper.Network
             else
             {
                 int index = random.Next(Hidden.Count + 1);
-                INeuronOutput output = index == Hidden.Count ? Output : Hidden[index];
+                IOutputNeuron output = index == Hidden.Count ? Output : Hidden[index];
                 _ = new Connection(input, output);
             }
         }
@@ -104,7 +104,7 @@ namespace Minesweeper.Network
         {
             IEnumerable<HiddenNeuron> hidden = Hidden.Where(h => h.Layer > neuron.Layer);
             int outputIndex = random.Next(hidden.Count() + 1);
-            INeuronOutput output = outputIndex == hidden.Count() ?
+            IOutputNeuron output = outputIndex == hidden.Count() ?
                 Output : hidden.ElementAt(outputIndex);
 
             _ = new Connection(neuron, output);

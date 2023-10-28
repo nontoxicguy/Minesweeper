@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Minesweeper.Network
 {
-    internal class InputNeuron : INeuronInput
+    internal class InputNeuron : IInputNeuron
     {
         [JsonIgnore]
         public float Value { get; set; }
@@ -25,7 +25,7 @@ namespace Minesweeper.Network
         }
     }
 
-    internal class HiddenNeuron : INeuronInput, INeuronOutput
+    internal class HiddenNeuron : IInputNeuron, IOutputNeuron
     {
         [JsonIgnore]
         public float Value { get; set; }
@@ -48,7 +48,7 @@ namespace Minesweeper.Network
         }
     }
 
-    internal class OutputNeuron : INeuronOutput
+    internal class OutputNeuron : IOutputNeuron
     {
         [JsonInclude]
         public List<Connection> Ins { get; set; } = new();

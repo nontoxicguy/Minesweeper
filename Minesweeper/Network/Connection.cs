@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Minesweeper.Network
 {
@@ -12,8 +9,8 @@ namespace Minesweeper.Network
     {
         public float Weight;
 
-        internal INeuronInput Input;
-        internal INeuronOutput Output;
+        internal IInputNeuron Input;
+        internal IOutputNeuron Output;
 
         internal int? JsonId;
 
@@ -23,7 +20,7 @@ namespace Minesweeper.Network
             Output = null!;
         }
 
-        internal Connection(INeuronInput input, INeuronOutput output)
+        internal Connection(IInputNeuron input, IOutputNeuron output)
         {
             Input = input;
             input.Outs.Add(this);

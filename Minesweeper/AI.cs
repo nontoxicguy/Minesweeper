@@ -169,7 +169,7 @@ namespace Minesweeper
                 else if (killed.Inputs[i].Outs.Count < best.Inputs[i].Outs.Count)
                 {
                     int outputIndex = random.Next(killed.Hidden.Count + 1);
-                    INeuronOutput output = outputIndex == killed.Hidden.Count ?
+                    IOutputNeuron output = outputIndex == killed.Hidden.Count ?
                         killed.Output : killed.Hidden[outputIndex];
 
                     _ = new Connection(killed.Inputs[i], output);
