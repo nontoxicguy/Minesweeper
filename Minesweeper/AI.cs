@@ -62,42 +62,34 @@ namespace Minesweeper
             _mainWindow = window;
 
             string json = File.ReadAllText(toLoadPath);
-            best = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!;
+            best = Load(json);
+            _ais[0] = best;
 
-            foreach (InputNeuron input in best.Inputs)
+            for (byte i = 1; i < _ais.Length; ++i)
+            {
+                _ais[i] = Load(json);
+                _ais[i].Mutate();
+            }
+        }
+
+        private NeuralNetwork Load(string json)
+        {
+            NeuralNetwork loaded = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions);
+
+            foreach (InputNeuron input in loaded.Inputs)
             {
                 input.Outs.ForEach(o => o.Input = input);
             }
 
-            foreach (HiddenNeuron hidden in best.Hidden)
+            foreach (HiddenNeuron hidden in loaded.Hidden)
             {
                 hidden.Ins.ForEach(i => i.Output = hidden);
                 hidden.Outs.ForEach(o => o.Input = hidden);
             }
 
-            best.Output.Ins.ForEach(i => i.Output = best.Output);
+            loaded.Output.Ins.ForEach(i => i.Output = loaded.Output);
 
-            _ais[0] = best;
-
-            for (byte i = 1; i < _ais.Length; ++i)
-            {
-                _ais[i] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!;
-
-                foreach (InputNeuron input in _ais[i].Inputs)
-                {
-                    input.Outs.ForEach(o => o.Input = input);
-                }
-
-                foreach (HiddenNeuron hidden in _ais[i].Hidden)
-                {
-                    hidden.Ins.ForEach(i => i.Output = hidden);
-                    hidden.Outs.ForEach(o => o.Input = hidden);
-                }
-
-                _ais[i].Output.Ins.ForEach(i => i.Output = best.Output);
-
-                _ais[i].Mutate();
-            }
+            return loaded;
         }
 
         internal void Save()
@@ -113,23 +105,19 @@ namespace Minesweeper
 
         private void Mix(NeuralNetwork killed)
         {
-            int hiddenLength = killed.Hidden.Count;
-
             if (killed.Hidden.Count > best.Hidden.Count)
             {
                 int index = random.Next(killed.Hidden.Count);
                 killed.Hidden[index].Ins.ForEach(i => i.Input.Outs.Remove(i));
                 killed.Hidden[index].Outs.ForEach(o => o.Output.Ins.Remove(o));
                 killed.Hidden.RemoveAt(index);
-
-                hiddenLength = best.Hidden.Count;
             }
             else if (killed.Hidden.Count < best.Hidden.Count)
             {
                 killed.AddHidden(random);
-                ++hiddenLength;
             }
 
+            int hiddenLength = Math.Min(killed.Hidden.Count, best.Hidden.Count);
             for (int i = 0; i < hiddenLength; ++i)
             {
                 int outsLength = killed.Hidden[i].Outs.Count;
@@ -158,22 +146,18 @@ namespace Minesweeper
 
             for (byte i = 0; i < 80; ++i)
             {
-                int outsLength = killed.Inputs[i].Outs.Count;
-
                 if (killed.Inputs[i].Outs.Count > best.Inputs[i].Outs.Count)
                 {
                     killed.Inputs[i].Outs[random.Next(killed.Inputs[i].Outs.Count)].Destroy();
-                    outsLength = best.Inputs[i].Outs.Count;
                 }
                 else if (killed.Inputs[i].Outs.Count < best.Inputs[i].Outs.Count)
                 {
                     int outputIndex = random.Next(killed.Hidden.Count + 1);
 
                     _ = new Connection(killed.Inputs[i], outputIndex == killed.Hidden.Count ? killed.Output : killed.Hidden[outputIndex]);
-
-                    ++outsLength;
                 }
 
+                int outsLength = Math.Min(killed.Inputs[i].Outs.Count, best.Inputs[i].Outs.Count);
                 for (int j = 0; j < outsLength; ++j)
                 {
                     killed.Inputs[i].Outs[j].Weight = (killed.Inputs[i].Outs[j].Weight + best.Inputs[i].Outs[j].Weight) / 2;
@@ -282,16 +266,13 @@ namespace Minesweeper
                 
                 best = _ais[bestIndex];
 
-                for (byte i = 0; i < bestIndex; ++i)
+                for (byte i = 0; i < 100; ++i)
                 {
-                    Mix(_ais[i]);
-                    _ais[i].Mutate();
-                }
-
-                for (byte i = (byte)(bestIndex + 1); i < 100; ++i)
-                {
-                    Mix(_ais[i]);
-                    _ais[i].Mutate();
+                    if (_ais[i] != best)
+                    {
+                        Mix(_ais[i]);
+                        _ais[i].Mutate();
+                    }
                 }
             }
         }
