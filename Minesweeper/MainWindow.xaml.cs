@@ -110,7 +110,11 @@ namespace Minesweeper
         {
             if (_aiSelect.ShowDialog() == true)
             {
-                _ai = new(this, _aiSelect.FileName);
+                AI loaded = new(this, _aiSelect.FileName, out bool validJson);
+                if (validJson)
+                {
+                    _ai = loaded;
+                }
             }
         }
 
@@ -246,38 +250,29 @@ namespace Minesweeper
 
         private void MineCountChanged(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key != Key.Enter) return;
+
+            short newCount = short.Parse(MinesBox.Text);
+
+            if (newCount > 0 && newCount <= GameGrid.Rows * GameGrid.Columns - 9)
             {
-                int newCount = int.Parse(MinesBox.Text);
+                _totalMines = newCount;
 
-                if (newCount > 0 && newCount <= GameGrid.Rows * GameGrid.Columns - 9)
-                {
-                    _totalMines = newCount;
+                _playing = false;
 
-                    _playing = false;
-
-                    NewGame();
-                }
-                else
-                {
-                    MinesBox.Text = _totalMines.ToString();
-                }
+                NewGame();
+            }
+            else
+            {
+                MinesBox.Text = _totalMines.ToString();
             }
         }
 
         private void ChangeSize(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Enter)
-            {
-                return;
-            }
+            if (e.Key != Key.Enter) return;
 
-            byte newSize = byte.Parse(SizeBox.Text);
-
-            if (newSize < 5 || newSize > 50)
-            {
-                return;
-            }
+            byte newSize = Math.Clamp(byte.Parse(SizeBox.Text), (byte)5, (byte)50);
 
             GameGrid.Children.Clear();
             Grid = new Square[newSize, newSize];

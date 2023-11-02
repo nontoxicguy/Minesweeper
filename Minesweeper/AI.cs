@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Minesweeper
 {
@@ -57,13 +58,32 @@ namespace Minesweeper
             }
         }
 
-        internal AI(MainWindow window, string toLoadPath)
+        internal AI(MainWindow window, string toLoadPath, out bool success)
         {
             _mainWindow = window;
 
             string json = File.ReadAllText(toLoadPath);
-            best = Load(json);
-            _ais[0] = best;
+
+            try
+            {
+                _ais[0] = Load(json);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e switch
+                {
+                    NullReferenceException => "Missing values in .json",
+                    JsonException => "Provided JSON not a neural network",
+                    _ => $"Unexpected exception: {e} not handled"
+                }, "Error while loading");
+                success = false;
+                best = null!;
+                return;
+            }
+
+            success = true;
+
+            best = _ais[0];
 
             for (byte i = 1; i < _ais.Length; ++i)
             {
@@ -74,7 +94,7 @@ namespace Minesweeper
 
         private NeuralNetwork Load(string json)
         {
-            NeuralNetwork loaded = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions);
+            NeuralNetwork loaded = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!;
 
             foreach (InputNeuron input in loaded.Inputs)
             {
