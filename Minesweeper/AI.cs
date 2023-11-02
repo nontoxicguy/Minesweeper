@@ -18,7 +18,7 @@ namespace Minesweeper
 
         private readonly Random random = new();
 
-        public short WaitTime;
+        public ushort WaitTime;
 
         private NeuralNetwork best;
 
@@ -68,14 +68,9 @@ namespace Minesweeper
             {
                 _ais[0] = Load(json);
             }
-            catch (Exception e)
+            catch (JsonException)
             {
-                MessageBox.Show(e switch
-                {
-                    NullReferenceException => "Missing values in .json",
-                    JsonException => "Provided JSON not a neural network",
-                    _ => $"Unexpected exception: {e} not handled"
-                }, "Error while loading");
+                MessageBox.Show("Invalid JSON provided", "Error while loading");
                 success = false;
                 best = null!;
                 return;
@@ -140,19 +135,16 @@ namespace Minesweeper
             int hiddenLength = Math.Min(killed.Hidden.Count, best.Hidden.Count);
             for (int i = 0; i < hiddenLength; ++i)
             {
-                int outsLength = killed.Hidden[i].Outs.Count;
-
                 if (killed.Hidden[i].Outs.Count > best.Hidden[i].Outs.Count)
                 {
                     killed.Hidden[i].Outs[random.Next(killed.Hidden[i].Outs.Count)].Destroy();
-                    outsLength = best.Hidden[i].Outs.Count;
                 }
                 else if (killed.Hidden[i].Outs.Count < best.Hidden[i].Outs.Count)
                 {
                     killed.AddNeuronOut(random, killed.Hidden[i]);
-                    ++outsLength;
                 }
 
+                int outsLength = Math.Min(killed.Hidden[i].Outs.Count, best.Hidden[i].Outs.Count);
                 for (int j = 0; j < outsLength; ++j)
                 {
                     killed.Hidden[i].Outs[j].Weight = (killed.Hidden[i].Outs[j].Weight + best.Hidden[i].Outs[j].Weight) / 2;
@@ -187,17 +179,14 @@ namespace Minesweeper
 
         public async Task Train(CancellationToken cancelToken)
         {
-            while (!cancelToken.IsCancellationRequested)
+            while (true)
             {
                 byte bestIndex = 0;
 
                 for (byte n = 0; n < 100; ++n)
                 {
                     _mainWindow.NewGame();
-                    byte
-                        startX = (byte)random.Next(_mainWindow.GameGrid.Columns),
-                        startY = (byte)random.Next(_mainWindow.GameGrid.Rows);
-                    _mainWindow.Reveal(startX, startY);
+                    _mainWindow.Reveal((byte)random.Next(_mainWindow.GameGrid.Columns), (byte)random.Next(_mainWindow.GameGrid.Rows));
 
                     _ais[n].Score = 0;
 
@@ -238,29 +227,23 @@ namespace Minesweeper
                                         {
                                             _ais[n].Score -= 5;
                                             _mainWindow.NewGame();
-                                            startX = (byte)random.Next(_mainWindow.GameGrid.Columns);
-                                            startY = (byte)random.Next(_mainWindow.GameGrid.Rows);
-                                            _mainWindow.Reveal(startX, startY);
-                                            ++i;
+                                            _mainWindow.Reveal((byte)random.Next(_mainWindow.GameGrid.Columns), (byte)random.Next(_mainWindow.GameGrid.Rows));
                                             continue;
                                         }
 
                                         ++_ais[n].Score;
                                         _mainWindow.Reveal(x, y);
 
-                                        if (_mainWindow.SafeSpotsLeft == 0)
+                                        if (_mainWindow.Face.Source == Images.Cool)
                                         {
-                                            _ais[n].Score += 9;
                                             _mainWindow.NewGame();
-                                            startX = (byte)random.Next(_mainWindow.GameGrid.Columns);
-                                            startY = (byte)random.Next(_mainWindow.GameGrid.Rows);
-                                            _mainWindow.Reveal(startX, startY);
-                                            ++i;
+                                            _mainWindow.Reveal((byte)random.Next(_mainWindow.GameGrid.Columns), (byte)random.Next(_mainWindow.GameGrid.Rows));
                                         }
 
                                         continue;
                                     case 2:
-                                        _mainWindow.Flag(x, y);
+                                        _mainWindow.Grid[x, y].Source = Images.Flag;
+                                        _mainWindow.Grid[x, y].CanTell = false;
 
                                         await Task.Delay(WaitTime, cancelToken);
                                         locked = false;

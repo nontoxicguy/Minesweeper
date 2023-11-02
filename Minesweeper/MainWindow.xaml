@@ -8,7 +8,7 @@
         Title="Minesweeper"
         Height="500"
         Width="500"
-        Background="Gray">
+        Background="#333333">
 
     <Viewbox>
         <Grid>
@@ -76,11 +76,11 @@
                         <TextBox
                             x:Name="MinesBox"
                             Width="36"
-                            Text="156"
+                            Text="125"
                             MaxLength="4"
                             PreviewTextInput="CanEnterText"
                             Canvas.Left="38"
-                            PreviewKeyDown="MineCountChanged"
+                            PreviewKeyDown="ChangeMineCount"
                             Margin="2,7"/>
 
                         <TextBlock
@@ -129,9 +129,7 @@
                     BorderThickness="0"
                     Background="Black">
 
-                    <Image
-                        x:Name="Face"
-                        Source="Images/HappyFace.png"/>
+                    <Image x:Name="Face"/>
                 </Button>
 
                 <Button

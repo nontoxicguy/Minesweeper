@@ -7,7 +7,7 @@ namespace Minesweeper
     {
         internal Image GridImage;
 
-        readonly internal ImageSource Source
+        internal readonly ImageSource Source
         {
             get => GridImage.Source;
             set => GridImage.Source = value;

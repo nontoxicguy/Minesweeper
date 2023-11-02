@@ -41,11 +41,6 @@ namespace Minesweeper.Network
 
         [JsonInclude]
         public List<Connection> Outs { get; set; } = new();
-
-        internal Func<float, float> ActivationFunction
-        {
-            get => AI.ActivationFunctions[FunctionIndex];
-        }
     }
 
     internal class OutputNeuron : IOutputNeuron

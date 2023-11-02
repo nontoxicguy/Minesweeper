@@ -41,7 +41,7 @@ namespace Minesweeper.Network
             {
                 foreach (HiddenNeuron neuron in layer)
                 {
-                    neuron.Value = neuron.ActivationFunction(neuron.Ins.Sum(i => i.Input.Value));
+                    neuron.Value = AI.ActivationFunctions[neuron.FunctionIndex](neuron.Ins.Sum(i => i.Input.Value));
                 }
             }
 

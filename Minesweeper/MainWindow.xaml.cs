@@ -21,9 +21,7 @@ namespace Minesweeper
             _timerCancel = new(),
             _trainCancel = new();
 
-        private bool
-            _playing = false,
-            _start = true;
+        private bool _start = true;
 
         private readonly OpenFileDialog _aiSelect = new()
         {
@@ -31,17 +29,18 @@ namespace Minesweeper
             InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
         };
 
-        private readonly Regex _isNumber = new("[^0-9]+");
-
-        internal int SafeSpotsLeft = 500;
+        private readonly Func<string, bool> _isNumber = new Regex("[^0-9]+").IsMatch;
 
         private int
             _totalMines = 125,
+            _safeSpotsLeft = 500,
             _minesLeft = 125;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            Face.Source = Images.Happy;
             SetupGrid();
         }
 
@@ -51,18 +50,30 @@ namespace Minesweeper
             {
                 for (byte x = 0; x < GameGrid.Columns; ++x)
                 {
-                    Image image = new()
+                    Grid[x, y].GridImage = new()
                     {
                         Source = Images.Normal
                     };
 
                     byte copyX = x, copyY = y;
 
-                    image.MouseRightButtonDown += (s, e) => Flag(copyX, copyY);
-                    image.MouseLeftButtonUp += (s, e) => Reveal(copyX, copyY);
+                    Grid[x, y].GridImage.MouseRightButtonDown += (_, _) => Flag(copyX, copyY);
 
-                    GameGrid.Children.Add(image);
-                    Grid[x, y].GridImage = image;
+                    Grid[x, y].GridImage.MouseLeftButtonUp += (_, _) =>
+                    {
+                        if (Face.Source != Images.Suspense) return;
+
+                        if (_start)
+                        {
+                            _ = Timer();
+                        }
+
+                        Face.Source = Images.Happy;
+
+                        Reveal(copyX, copyY);
+                    };
+
+                    GameGrid.Children.Add(Grid[x, y].GridImage);
                 }
             }
         }
@@ -75,38 +86,63 @@ namespace Minesweeper
 
             int remainingMines = _totalMines;
 
-            List<(byte, byte)> potentialBombLocations = new();
+            List<(byte, byte)> freeBombLocations = new();
 
             for (byte row = 0; row < GameGrid.Rows; row++)
             {
                 for (byte col = 0; col < GameGrid.Columns; col++)
                 {
-                    Grid[col, row].IsBomb = false;
-
                     if (Math.Abs(x - col) > 1 || Math.Abs(y - row) > 1)
                     {
-                        potentialBombLocations.Add((col, row));
+                        freeBombLocations.Add((col, row));
                     }
                 }
             }
 
             while (remainingMines-- > 0)
             {
-                int randomIndex = random.Next(potentialBombLocations.Count);
-                (byte col, byte row) = potentialBombLocations[randomIndex];
-
-                Grid[col, row].IsBomb = true;
-                potentialBombLocations.RemoveAt(randomIndex);
+                int randomIndex = random.Next(freeBombLocations.Count);
+                Grid[freeBombLocations[randomIndex].Item1, freeBombLocations[randomIndex].Item2].IsBomb = true;
+                freeBombLocations.RemoveAt(randomIndex);
             }
         }
 
-        private void NewGame(object sender, RoutedEventArgs e)
-            => NewGame();
+        private void NewGame(object _1, RoutedEventArgs _2)
+        {
+            Face.Source = Images.Happy;
 
-        private void SaveAI(object sender, RoutedEventArgs e)
-            => _ai?.Save();
+            if (!_timerCancel.IsCancellationRequested)
+            {
+                _timerCancel.Cancel();
+            }
+            _timerCancel = new();
+            Time.Text = "0";
 
-        private void LoadAI(object sender, RoutedEventArgs e)
+            Mines.Text = _totalMines.ToString();
+
+            NewGame();
+        }
+
+        internal void NewGame()
+        {
+            _start = true;
+
+            for (byte x = 0; x < GameGrid.Columns; ++x)
+            {
+                for (byte y = 0; y < GameGrid.Rows; ++y)
+                {
+                    Grid[x, y].Source = Images.Normal;
+                    Grid[x, y].CanTell = false;
+                    Grid[x, y].IsBomb = false;
+                }
+            }
+
+            _safeSpotsLeft = Grid.Length - _totalMines;
+        }
+
+        private void SaveAI(object _1, RoutedEventArgs _2) => _ai?.Save();
+
+        private void LoadAI(object _1, RoutedEventArgs _2)
         {
             if (_aiSelect.ShowDialog() == true)
             {
@@ -118,35 +154,10 @@ namespace Minesweeper
             }
         }
 
-        internal void NewGame()
-        {
-            Face.Source = Images.Happy;
-
-            _start = true;
-
-            _timerCancel.Cancel();
-            _timerCancel = new();
-
-            for (byte x = 0; x < GameGrid.Columns; ++x)
-            {
-                for (byte y = 0; y < GameGrid.Rows; ++y)
-                {
-                    Grid[x, y].Source = Images.Normal;
-                    Grid[x, y].CanTell = false;
-                }
-            }
-
-            SafeSpotsLeft = Grid.Length - _totalMines;
-
-            Time.Text = "0";
-            Mines.Text = _totalMines.ToString();
-        }
-
         private void WinGame()
         {
             Face.Source = Images.Cool;
 
-            _playing = false;
             _timerCancel.Cancel();
 
             for (byte x = 0; x < GameGrid.Columns; ++x)
@@ -157,8 +168,6 @@ namespace Minesweeper
                     {
                         Grid[x, y].Source = Images.Flag;
                     }
-
-                    Grid[x, y].CanTell = false;
                 }
             }
 
@@ -169,7 +178,6 @@ namespace Minesweeper
         {
             Face.Source = Images.Dead;
 
-            _playing = false;
             _timerCancel.Cancel();
 
             for (byte x = 0; x < GameGrid.Columns; ++x)
@@ -187,18 +195,16 @@ namespace Minesweeper
                     {
                         Grid[x, y].Source = Images.FalseFlag;
                     }
-
-                    Grid[x, y].CanTell = false;
                 }
             }
         }
 
-        private void Options(object sender, RoutedEventArgs e) =>
+        private void Options(object _1, RoutedEventArgs _2) =>
             OptionsMenu.Visibility = OptionsMenu.IsVisible ? Visibility.Hidden : Visibility.Visible;
 
-        internal void Flag(byte x, byte y)
+        private void Flag(byte x, byte y)
         {
-            if (!_playing) return;
+            if (Face.Source != Images.Happy) return;
 
             if (Grid[x, y].Source == Images.Normal)
             {
@@ -214,18 +220,18 @@ namespace Minesweeper
             }
         }
 
-        private void CanEnterText(object sender, TextCompositionEventArgs e)
-            => e.Handled = _isNumber.IsMatch(e.Text);
+        private void CanEnterText(object _, TextCompositionEventArgs e)
+            => e.Handled = _isNumber(e.Text);
 
-        private void AISpeedChanged(object sender, SelectionChangedEventArgs e)
+        private void AISpeedChanged(object _1, SelectionChangedEventArgs _2)
         {
             _ai ??= new(this);
 
-            ComboBoxItem newSpeed = (ComboBoxItem)AISpeedBox.SelectedItem;
-            switch (newSpeed.Content.ToString())
+            switch (((ComboBoxItem)AISpeedBox.SelectedItem).Content)
             {
                 case "Deactivated":
                     _trainCancel.Cancel();
+                    _trainCancel = new();
                     return;
                 case "Human":
                     _ai.WaitTime = 1000;
@@ -238,37 +244,26 @@ namespace Minesweeper
                     break;
             }
 
-            if (_trainCancel.IsCancellationRequested)
-            {
-                _trainCancel = new();
-            }
-            else
-            {
-                _ = _ai.Train(_trainCancel.Token);
-            }
+            _timerCancel.Cancel();
+            _timerCancel = new();
+            Time.Text = "0";
+
+            Face.Source = Images.Happy;
+
+            _ = _ai.Train(_trainCancel.Token);
         }
 
-        private void MineCountChanged(object sender, KeyEventArgs e)
+        private void ChangeMineCount(object _, KeyEventArgs e)
         {
-            if (e.Key != Key.Enter) return;
-
-            short newCount = short.Parse(MinesBox.Text);
-
-            if (newCount > 0 && newCount <= GameGrid.Rows * GameGrid.Columns - 9)
+            if (e.Key == Key.Enter)
             {
-                _totalMines = newCount;
+                _totalMines = Math.Clamp(short.Parse(MinesBox.Text), 1, Grid.Length - 9);
 
-                _playing = false;
-
-                NewGame();
-            }
-            else
-            {
-                MinesBox.Text = _totalMines.ToString();
+                NewGame(null!, null!);
             }
         }
 
-        private void ChangeSize(object sender, KeyEventArgs e)
+        private void ChangeSize(object _, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
 
@@ -280,18 +275,13 @@ namespace Minesweeper
             GameGrid.Rows = newSize;
             GameGrid.Columns = newSize;
 
-            _playing = false;
-
-            SizeBox.Text = newSize.ToString();
-
-            if (newSize * newSize - 9 <= _totalMines)
+            if (Grid.Length - 9 <= _totalMines)
             {
-                _totalMines = newSize * newSize / 5;
-                MinesBox.Text = _totalMines.ToString();
+                _totalMines = Grid.Length / 5;
             }
 
             SetupGrid();
-            NewGame();
+            NewGame(null!, null!);
         }
 
         internal void Reveal(byte x, byte y)
@@ -299,17 +289,9 @@ namespace Minesweeper
             if (_start)
             {
                 _start = false;
-                _playing = true;
 
                 SetupMines(x, y);
-                _ = Timer();
             }
-            else if (!_playing)
-            {
-                return;
-            }
-
-            Face.Source = Images.Happy;
 
             if (Grid[x, y].Source == Images.Normal)
             {
@@ -321,7 +303,7 @@ namespace Minesweeper
 
                 SafeReveal(x, y);
 
-                if (SafeSpotsLeft == 0)
+                if (_safeSpotsLeft == 0)
                 {
                     WinGame();
                 }
@@ -344,30 +326,19 @@ namespace Minesweeper
                 (x + 1, y + 1)
             }.Where(c => c.Item1 >= 0 && c.Item2 >= 0 && c.Item1 < GameGrid.Columns && c.Item2 < GameGrid.Rows);
 
-            int MinesNear = neighbours.Count(c => Grid[c.Item1, c.Item2].IsBomb);
-            Grid[x, y].Source = Images.Numbers[MinesNear];
+            int minesNear = neighbours.Count(c => Grid[c.Item1, c.Item2].IsBomb);
+            Grid[x, y].Source = Images.Numbers[minesNear];
 
-            neighbours = neighbours.Where(n => Grid[n.Item1, n.Item2].Source == Images.Normal);
-
-            if (MinesNear == 0)
+            Action<int, int> neighbourAction = minesNear == 0 ? SafeReveal : (x, y) => Grid[x, y].CanTell = true;
+            foreach ((int neighbourX, int neighbourY) in neighbours)
             {
-                foreach ((int x2, int y2) in neighbours)
+                if (Grid[neighbourX, neighbourY].Source == Images.Normal)
                 {
-                    if (Grid[x2, y2].Source == Images.Normal)
-                    {
-                        SafeReveal(x2, y2);
-                    }
-                }
-            }
-            else
-            {
-                foreach ((int x2, int y2) in neighbours)
-                {
-                    Grid[x2, y2].CanTell = true;
+                   neighbourAction(neighbourX, neighbourY);
                 }
             }
 
-            --SafeSpotsLeft;
+            --_safeSpotsLeft;
         }
 
         private async Task Timer()
@@ -383,9 +354,9 @@ namespace Minesweeper
             }
         }
 
-        private void Suspense(object sender, MouseButtonEventArgs e)
+        private void Suspense(object _1, MouseButtonEventArgs _2)
         {
-            if (_playing)
+            if (Face.Source == Images.Happy)
             {
                 Face.Source = Images.Suspense;
             }
