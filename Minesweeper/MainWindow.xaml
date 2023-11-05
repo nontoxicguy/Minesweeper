@@ -1,15 +1,15 @@
 ﻿<Window x:Class="Minesweeper.MinesweeperGame"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:minesweeper="clr-namespace:Minesweeper"
-        mc:Ignorable="d"
-        Icon="Images/Bomb.png"
-        Title="Minesweeper"
-        Height="500"
-        Width="500"
-        Background="#333333">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:minesweeper="clr-namespace:Minesweeper"
+    mc:Ignorable="d"
+    Icon="Images/Bomb.png"
+    Title="Minesweeper"
+    Height="500"
+    Width="500"
+    Background="#444444">
 
     <Viewbox>
         <Grid>
@@ -27,20 +27,17 @@
                 BorderThickness="1">
 
                 <Canvas>
-                    <UniformGrid
-                        x:Name="GameGrid"
+                    <UniformGrid x:Name="GameGrid"
                         Rows="25"
                         Columns="25"
                         MouseLeftButtonDown="Suspense"
                         Height="78"
                         Width="78"/>
 
-                    <Canvas
-                        x:Name="OptionsMenu"
+                    <Canvas x:Name="OptionsMenu"
                         Visibility="Hidden">
                         
-                        <ComboBox
-                            x:Name="AISpeedBox"
+                        <ComboBox x:Name="AISpeedBox"
                             Width="65"
                             Height="17"
                             Margin="1.5,30"
@@ -57,8 +54,7 @@
                             <ComboBoxItem Content="Computer"/>
                         </ComboBox>
 
-                        <TextBox
-                            x:Name="SizeBox"
+                        <TextBox x:Name="SizeBox"
                             Width="37"
                             Text="25"
                             MaxLength="2"
@@ -74,8 +70,7 @@
                             Width="27"
                             Canvas.Left="7"/>
 
-                        <TextBox
-                            x:Name="MinesBox"
+                        <TextBox x:Name="MinesBox"
                             Width="36"
                             Text="125"
                             MaxLength="4"
@@ -117,66 +112,53 @@
                 </Canvas>
             </Border>
 
-            <Canvas
-                Margin="1,1,1,86">
+            <Border
+                Background="LightGray"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Margin="1,1,79,86">
 
-                <Button
-                    Width="13"
-                    Height="13"
-                    Canvas.Left="36"
-                    Click="NewGame"
-                    BorderThickness="0"
-                    Background="Black">
+                <TextBlock x:Name="Mines"
+                    FontSize="8"
+                    Foreground="Red"
+                    FontWeight="UltraBold"
+                    TextAlignment="Center"
+                    Text="125"/>
+            </Border>
 
-                    <Image x:Name="Face"
-                        Source="{x:Static minesweeper:Images.Happy}"/>
-                </Button>
+            <Button
+                Margin="34,1,53,86"
+                Background="Black"
+                BorderThickness="0"
+                Click="NewGame">
 
-                <Button
-                    Width="13"
-                    Height="13"
-                    Canvas.Left="50"
-                    Click="Options"
-                    BorderThickness="0"
-                    Background="Black">
+                <Image x:Name="Face"
+                    Source="{x:Static minesweeper:Images.Happy}"/>
+            </Button>
 
-                    <Image
-                        Source="Images/Options.png"/>
-                </Button>
+            <Button
+                Margin="53,1,34,86"
+                Background="Black"
+                BorderThickness="0"
+                Click="Options">
 
-                <Border
-                    Background="LightGray"
-                    BorderBrush="Black"
-                    BorderThickness="1"
-                    Height="13"
-                    Width="20">
+                <Image
+                    Source="Images/Options.png"/>
+            </Button>
 
-                    <TextBlock
-                        x:Name="Mines"
-                        FontSize="8"
-                        Foreground="Red"
-                        FontWeight="UltraBold"
-                        TextAlignment="Center"
-                        Text="125"/>
-                </Border>
+            <Border
+                Background="LightGray"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Margin="79,1,1,86">
 
-                <Border
-                    Background="LightGray"
-                    BorderBrush="Black"
-                    BorderThickness="1"
-                    Height="13"
-                    Width="20"
-                    Canvas.Left="78">
-
-                    <TextBlock
-                        x:Name="Time"
-                        FontSize="8"
-                        Foreground="Red"
-                        FontWeight="UltraBold"
-                        TextAlignment="Center"
-                        Text="0"/>
-                </Border>
-            </Canvas>
+                <TextBlock x:Name="Time"
+                    FontSize="8"
+                    Foreground="Red"
+                    FontWeight="UltraBold"
+                    TextAlignment="Center"
+                    Text="0"/>
+            </Border>
         </Grid>
     </Viewbox>
 </Window>
