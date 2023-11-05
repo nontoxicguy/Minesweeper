@@ -14,7 +14,7 @@ namespace Minesweeper
     {
         private readonly NeuralNetwork[] _ais = new NeuralNetwork[100];
 
-        private readonly MainWindow _mainWindow;
+        private readonly MinesweeperGame _mainWindow;
 
         private readonly Random random = new();
 
@@ -46,7 +46,7 @@ namespace Minesweeper
             x => (float)Math.Tanh(x)
         };
 
-        public AI(MainWindow window)
+        public AI(MinesweeperGame window)
         {
             best = null!;
             _mainWindow = window;
@@ -58,7 +58,7 @@ namespace Minesweeper
             }
         }
 
-        internal AI(MainWindow window, string toLoadPath, out bool success)
+        internal AI(MinesweeperGame window, string toLoadPath, out bool success)
         {
             _mainWindow = window;
 

@@ -11,7 +11,7 @@ using System.Windows.Input;
 
 namespace Minesweeper
 {
-    public partial class MainWindow : Window
+    public partial class MinesweeperGame : Window
     {
         private AI? _ai;
 
@@ -36,11 +36,9 @@ namespace Minesweeper
             _safeSpotsLeft = 500,
             _minesLeft = 125;
 
-        public MainWindow()
+        public MinesweeperGame()
         {
             InitializeComponent();
-
-            Face.Source = Images.Happy;
             SetupGrid();
         }
 
