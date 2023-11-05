@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:minesweeper="clr-namespace:Minesweeper"
         mc:Ignorable="d"
         Icon="Images/Bomb.png"
         Title="Minesweeper"
@@ -99,7 +100,6 @@
 
                             <TextBlock
                                 Text="Save AI"
-                                TextAlignment="Center"
                                 FontSize="5"/>
                         </Button>
 
@@ -111,7 +111,6 @@
 
                             <TextBlock
                                 Text="Load AI"
-                                TextAlignment="Center"
                                 FontSize="5"/>
                         </Button>
                     </Canvas>
@@ -129,7 +128,8 @@
                     BorderThickness="0"
                     Background="Black">
 
-                    <Image x:Name="Face"/>
+                    <Image x:Name="Face"
+                        Source="{x:Static minesweeper:Images.Happy}"/>
                 </Button>
 
                 <Button
