@@ -7,61 +7,59 @@
     mc:Ignorable="d"
     Icon="Images/Bomb.png"
     Title="Minesweeper"
-    Height="500"
-    Width="500"
-    Background="#444444">
+    Height="475"
+    Width="410"
+    Background="Gray">
 
     <Viewbox>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="100"/>
+                <RowDefinition Height="95"/>
             </Grid.RowDefinitions>
-
+    
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="82"/>
             </Grid.ColumnDefinitions>
-
+    
             <Border
-                Margin="10,15,10,5"
+                Margin="1,14,1,1"
                 BorderBrush="Black"
                 BorderThickness="1">
-
+    
                 <Canvas>
                     <UniformGrid x:Name="GameGrid"
                         Rows="25"
                         Columns="25"
                         MouseLeftButtonDown="Suspense"
-                        Height="78"
-                        Width="78"/>
-
+                        Width="78"
+                        Height="78"/>
+    
                     <Canvas x:Name="OptionsMenu"
                         Visibility="Hidden">
                         
                         <ComboBox x:Name="AISpeedBox"
-                            Width="65"
-                            Height="17"
-                            Margin="1.5,30"
-                            FontSize="6"
+                            Margin="10,32"
+                            FontSize="7"
                             IsEditable="True"
                             IsReadOnly="True"
                             Text="AI speed"
-                            SelectionChanged="AISpeedChanged"
-                            Canvas.Left="5">
-
+                            SelectionChanged="AISpeedChanged">
+    
                             <ComboBoxItem Content="Deactivated"/>
                             <ComboBoxItem Content="Human"/>
                             <ComboBoxItem Content="Timelapse"/>
                             <ComboBoxItem Content="Computer"/>
                         </ComboBox>
-
+    
                         <TextBox x:Name="SizeBox"
                             Width="37"
                             Text="25"
                             MaxLength="2"
+                            BorderBrush="Black"
                             PreviewTextInput="CanEnterText"
                             PreviewKeyDown="ChangeSize"
                             Margin="2,7"/>
-
+    
                         <TextBlock
                             Text="Size"
                             FontSize="5"
@@ -69,16 +67,16 @@
                             Height="7"
                             Width="27"
                             Canvas.Left="7"/>
-
+    
                         <TextBox x:Name="MinesBox"
                             Width="36"
                             Text="125"
                             MaxLength="4"
+                            BorderBrush="Black"
                             PreviewTextInput="CanEnterText"
-                            Canvas.Left="38"
                             PreviewKeyDown="ChangeMineCount"
-                            Margin="2,7"/>
-
+                            Margin="40,7"/>
+    
                         <TextBlock
                             Text="Mines"
                             FontSize="5"
@@ -86,76 +84,68 @@
                             Height="7"
                             Width="28"
                             Canvas.Left="44"/>
-
+    
                         <Button
-                            Canvas.Left="10"
-                            Canvas.Top="55"
-                            Width="20"
-                            Click="SaveAI">
-
-                            <TextBlock
-                                Text="Save AI"
-                                FontSize="5"/>
-                        </Button>
-
+                            Margin="4,55,45,25"
+                            BorderBrush="Black"
+                            Click="SaveAI"
+                            Content="Save AI"
+                            FontSize="7"/>
+    
                         <Button
-                            Canvas.Left="45"
-                            Canvas.Top="55"
-                            Width="20"
-                            Click="LoadAI">
-
-                            <TextBlock
-                                Text="Load AI"
-                                FontSize="5"/>
-                        </Button>
+                            Margin="45,55,4,25"
+                            BorderBrush="Black"
+                            Click="LoadAI"
+                            Content="Load AI"
+                            FontSize="7"/>
                     </Canvas>
                 </Canvas>
             </Border>
-
+    
             <Border
                 Background="LightGray"
                 BorderBrush="Black"
                 BorderThickness="1"
-                Margin="1,1,79,86">
-
+                Margin="1,1,61,82">
+    
                 <TextBlock x:Name="Mines"
-                    FontSize="8"
+                    FontSize="7"
                     Foreground="Red"
-                    FontWeight="UltraBold"
+                    FontWeight="Bold"
                     TextAlignment="Center"
                     Text="125"/>
             </Border>
-
+    
             <Button
-                Margin="34,1,53,86"
+                Margin="28,1,42,82"
                 Background="Black"
                 BorderThickness="0"
                 Click="NewGame">
-
+    
                 <Image x:Name="Face"
                     Source="{x:Static minesweeper:Images.Happy}"/>
             </Button>
-
+    
             <Button
-                Margin="53,1,34,86"
+                Margin="42,1,28,82"
                 Background="Black"
                 BorderThickness="0"
                 Click="Options">
-
+    
                 <Image
                     Source="Images/Options.png"/>
             </Button>
-
+    
             <Border
                 Background="LightGray"
                 BorderBrush="Black"
                 BorderThickness="1"
-                Margin="79,1,1,86">
-
+                Margin="61,1,1,82">
+    
                 <TextBlock x:Name="Time"
-                    FontSize="8"
+                    FontSize="7"
                     Foreground="Red"
-                    FontWeight="UltraBold"
+                    FontWeight="Bold"
                     TextAlignment="Center"
                     Text="0"/>
             </Border>

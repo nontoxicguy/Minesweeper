@@ -212,7 +212,7 @@ namespace Minesweeper
                                         && inputX < _mainWindow.GameGrid.Columns
                                         && inputY < _mainWindow.GameGrid.Rows)
                                     {
-                                        input.Value = Images.GridMaker[_mainWindow.Grid[inputX, inputY].Source];
+                                        input.Value = Images.GridMaker[_mainWindow.Grid[inputX, inputY].GridImage.Source];
                                     }
                                 }
 
@@ -242,7 +242,7 @@ namespace Minesweeper
 
                                         continue;
                                     case 2:
-                                        _mainWindow.Grid[x, y].Source = Images.Flag;
+                                        _mainWindow.Grid[x, y].GridImage.Source = Images.Flag;
                                         _mainWindow.Grid[x, y].CanTell = false;
 
                                         await Task.Delay(WaitTime, cancelToken);
@@ -269,13 +269,16 @@ namespace Minesweeper
                 
                 best = _ais[bestIndex];
 
-                for (byte i = 0; i < 100; ++i)
+                for (byte i = 0; i < bestIndex; ++i)
                 {
-                    if (_ais[i] != best)
-                    {
-                        Mix(_ais[i]);
-                        _ais[i].Mutate();
-                    }
+                    Mix(_ais[i]);
+                    _ais[i].Mutate();
+                }
+
+                for (byte i = (byte)(bestIndex + 1); i < 100; ++i)
+                {
+                    Mix(_ais[i]);
+                    _ais[i].Mutate();
                 }
             }
         }

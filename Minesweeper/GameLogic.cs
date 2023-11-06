@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,8 +27,6 @@ namespace Minesweeper
             Filter = "JSON (*.json)|*.json",
             InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
         };
-
-        private readonly Func<string, bool> _isNumber = new Regex("[^0-9]+").IsMatch;
 
         private int
             _totalMines = 125,
@@ -86,9 +83,9 @@ namespace Minesweeper
 
             List<(byte, byte)> freeBombLocations = new();
 
-            for (byte row = 0; row < GameGrid.Rows; row++)
+            for (byte row = 0; row < GameGrid.Rows; ++row)
             {
-                for (byte col = 0; col < GameGrid.Columns; col++)
+                for (byte col = 0; col < GameGrid.Columns; ++col)
                 {
                     if (Math.Abs(x - col) > 1 || Math.Abs(y - row) > 1)
                     {
@@ -129,7 +126,7 @@ namespace Minesweeper
             {
                 for (byte y = 0; y < GameGrid.Rows; ++y)
                 {
-                    Grid[x, y].Source = Images.Normal;
+                    Grid[x, y].GridImage.Source = Images.Normal;
                     Grid[x, y].CanTell = false;
                     Grid[x, y].IsBomb = false;
                 }
@@ -162,9 +159,9 @@ namespace Minesweeper
             {
                 for (byte y = 0; y < GameGrid.Rows; ++y)
                 {
-                    if (Grid[x, y].Source == Images.Normal)
+                    if (Grid[x, y].GridImage.Source == Images.Normal)
                     {
-                        Grid[x, y].Source = Images.Flag;
+                        Grid[x, y].GridImage.Source = Images.Flag;
                     }
                 }
             }
@@ -184,14 +181,14 @@ namespace Minesweeper
                 {
                     if (Grid[x, y].IsBomb)
                     {
-                        if (Grid[x, y].Source == Images.Normal)
+                        if (Grid[x, y].GridImage.Source == Images.Normal)
                         {
-                            Grid[x, y].Source = Images.Bomb;
+                            Grid[x, y].GridImage.Source = Images.Bomb;
                         }
                     }
-                    else if (Grid[x, y].Source == Images.Flag)
+                    else if (Grid[x, y].GridImage.Source == Images.Flag)
                     {
-                        Grid[x, y].Source = Images.FalseFlag;
+                        Grid[x, y].GridImage.Source = Images.FalseFlag;
                     }
                 }
             }
@@ -204,22 +201,22 @@ namespace Minesweeper
         {
             if (Face.Source != Images.Happy) return;
 
-            if (Grid[x, y].Source == Images.Normal)
+            if (Grid[x, y].GridImage.Source == Images.Normal)
             {
-                Grid[x, y].Source = Images.Flag;
+                Grid[x, y].GridImage.Source = Images.Flag;
                 Mines.Text = (--_minesLeft).ToString();
                 Grid[x, y].CanTell = false;
             }
-            else if (Grid[x, y].Source == Images.Flag)
+            else if (Grid[x, y].GridImage.Source == Images.Flag)
             {
-                Grid[x, y].Source = Images.Normal;
+                Grid[x, y].GridImage.Source = Images.Normal;
                 Mines.Text = (++_minesLeft).ToString();
                 Grid[x, y].CanTell = true;
             }
         }
 
         private void CanEnterText(object _, TextCompositionEventArgs e)
-            => e.Handled = _isNumber(e.Text);
+            => e.Handled = !char.IsDigit(e.Text, e.Text.Length - 1);
 
         private void AISpeedChanged(object _1, SelectionChangedEventArgs _2)
         {
@@ -235,7 +232,7 @@ namespace Minesweeper
                     _ai.WaitTime = 1000;
                     break;
                 case "Timelapse":
-                    _ai.WaitTime = 100;
+                    _ai.WaitTime = 50;
                     break;
                 case "Computer":
                     _ai.WaitTime = 1;
@@ -253,17 +250,16 @@ namespace Minesweeper
 
         private void ChangeMineCount(object _, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
-            {
-                _totalMines = Math.Clamp(short.Parse(MinesBox.Text), 1, Grid.Length - 9);
+            if (e.Key != Key.Enter || SizeBox.Text == string.Empty) return;
 
-                NewGame(null!, null!);
-            }
+            _totalMines = Math.Clamp(short.Parse(MinesBox.Text), 1, Grid.Length - 9);
+
+            NewGame(null!, null!);
         }
 
         private void ChangeSize(object _, KeyEventArgs e)
         {
-            if (e.Key != Key.Enter) return;
+            if (e.Key != Key.Enter || SizeBox.Text == string.Empty) return;
 
             byte newSize = Math.Clamp(byte.Parse(SizeBox.Text), (byte)5, (byte)50);
 
@@ -291,7 +287,7 @@ namespace Minesweeper
                 SetupMines(x, y);
             }
 
-            if (Grid[x, y].Source == Images.Normal)
+            if (Grid[x, y].GridImage.Source == Images.Normal)
             {
                 if (Grid[x, y].IsBomb)
                 {
@@ -325,12 +321,12 @@ namespace Minesweeper
             }.Where(c => c.Item1 >= 0 && c.Item2 >= 0 && c.Item1 < GameGrid.Columns && c.Item2 < GameGrid.Rows);
 
             int minesNear = neighbours.Count(c => Grid[c.Item1, c.Item2].IsBomb);
-            Grid[x, y].Source = Images.Numbers[minesNear];
+            Grid[x, y].GridImage.Source = Images.Numbers[minesNear];
 
             Action<int, int> neighbourAction = minesNear == 0 ? SafeReveal : (x, y) => Grid[x, y].CanTell = true;
             foreach ((int neighbourX, int neighbourY) in neighbours)
             {
-                if (Grid[neighbourX, neighbourY].Source == Images.Normal)
+                if (Grid[neighbourX, neighbourY].GridImage.Source == Images.Normal)
                 {
                    neighbourAction(neighbourX, neighbourY);
                 }

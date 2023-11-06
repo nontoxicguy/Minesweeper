@@ -30,10 +30,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Images\Icon.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="Images\0.png" />
     <Resource Include="Images\1.png" />
     <Resource Include="Images\2.png" />
@@ -46,15 +42,12 @@
     <Resource Include="Images\Bomb.png" />
     <Resource Include="Images\CoolFace.png" />
     <Resource Include="Images\DeadFace.png" />
+    <Resource Include="Images\FalseFlag.png" />
     <Resource Include="Images\Flag.png" />
     <Resource Include="Images\HappyFace.png" />
     <Resource Include="Images\Normal.png" />
     <Resource Include="Images\Options.png" />
     <Resource Include="Images\SuspenseFace.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Images\FalseFlag.png" />
   </ItemGroup>
 
 </Project>
