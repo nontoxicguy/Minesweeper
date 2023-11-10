@@ -10,36 +10,39 @@ using System.Windows.Input;
 
 namespace Minesweeper
 {
-    public partial class MinesweeperGame : Window
+    sealed partial class MinesweeperGame : Window
     {
-        private AI? _ai;
+        AI? _ai;
 
-        internal Square[,] Grid = new Square[25, 25];
+        internal Square[,] Grid { get; private set; } = new Square[25, 25];
 
-        private CancellationTokenSource
+        CancellationTokenSource
             _timerCancel = new(),
             _trainCancel = new();
 
-        private bool _start = true;
+        bool _start = true;
 
-        private readonly OpenFileDialog _aiSelect = new()
+        readonly OpenFileDialog _aiSelect = new()
         {
             Filter = "JSON (*.json)|*.json",
             InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
         };
 
-        private int
+        int
             _totalMines = 125,
             _safeSpotsLeft = 500,
             _minesLeft = 125;
 
-        public MinesweeperGame()
+        MinesweeperGame()
         {
             InitializeComponent();
             SetupGrid();
         }
+        
+        [STAThread]
+        static void Main() => new Application().Run(new MinesweeperGame());
 
-        private void SetupGrid()
+        void SetupGrid()
         {
             for (byte y = 0; y < GameGrid.Rows; ++y)
             {
@@ -73,7 +76,7 @@ namespace Minesweeper
             }
         }
 
-        private void SetupMines(byte x, byte y)
+        void SetupMines(byte x, byte y)
         {
             _minesLeft = _totalMines;
 
@@ -102,7 +105,7 @@ namespace Minesweeper
             }
         }
 
-        private void NewGame(object _1, RoutedEventArgs _2)
+        void NewGame(object _1, RoutedEventArgs _2)
         {
             Face.Source = Images.Happy;
 
@@ -135,9 +138,9 @@ namespace Minesweeper
             _safeSpotsLeft = Grid.Length - _totalMines;
         }
 
-        private void SaveAI(object _1, RoutedEventArgs _2) => _ai?.Save();
+        void SaveAI(object _1, RoutedEventArgs _2) => _ai?.Save();
 
-        private void LoadAI(object _1, RoutedEventArgs _2)
+        void LoadAI(object _1, RoutedEventArgs _2)
         {
             if (_aiSelect.ShowDialog() == true)
             {
@@ -149,7 +152,7 @@ namespace Minesweeper
             }
         }
 
-        private void WinGame()
+        void WinGame()
         {
             Face.Source = Images.Cool;
 
@@ -169,7 +172,7 @@ namespace Minesweeper
             Mines.Text = "0";
         }
 
-        private void LoseGame()
+        void LoseGame()
         {
             Face.Source = Images.Dead;
 
@@ -194,10 +197,9 @@ namespace Minesweeper
             }
         }
 
-        private void Options(object _1, RoutedEventArgs _2) =>
-            OptionsMenu.Visibility = OptionsMenu.IsVisible ? Visibility.Hidden : Visibility.Visible;
+        void Options(object _1, RoutedEventArgs _2) => OptionsMenu.Visibility = OptionsMenu.IsVisible ? Visibility.Hidden : Visibility.Visible;
 
-        private void Flag(byte x, byte y)
+        void Flag(byte x, byte y)
         {
             if (Face.Source != Images.Happy) return;
 
@@ -215,10 +217,9 @@ namespace Minesweeper
             }
         }
 
-        private void CanEnterText(object _, TextCompositionEventArgs e)
-            => e.Handled = !char.IsDigit(e.Text, e.Text.Length - 1);
+        void CanEnterText(object _, TextCompositionEventArgs e) => e.Handled = !char.IsDigit(e.Text, e.Text.Length - 1);
 
-        private void AISpeedChanged(object _1, SelectionChangedEventArgs _2)
+        void AISpeedChanged(object _1, SelectionChangedEventArgs _2)
         {
             _ai ??= new(this);
 
@@ -248,7 +249,7 @@ namespace Minesweeper
             _ = _ai.Train(_trainCancel.Token);
         }
 
-        private void ChangeMineCount(object _, KeyEventArgs e)
+        void ChangeMineCount(object _, KeyEventArgs e)
         {
             if (e.Key != Key.Enter || SizeBox.Text == string.Empty) return;
 
@@ -257,7 +258,7 @@ namespace Minesweeper
             NewGame(null!, null!);
         }
 
-        private void ChangeSize(object _, KeyEventArgs e)
+        void ChangeSize(object _, KeyEventArgs e)
         {
             if (e.Key != Key.Enter || SizeBox.Text == string.Empty) return;
 
@@ -304,7 +305,7 @@ namespace Minesweeper
             }
         }
 
-        private void SafeReveal(int x, int y)
+        void SafeReveal(int x, int y)
         {
             Grid[x, y].CanTell = false;
 
@@ -335,7 +336,7 @@ namespace Minesweeper
             --_safeSpotsLeft;
         }
 
-        private async Task Timer()
+        async Task Timer()
         {
             int time = 0;
 
@@ -348,7 +349,7 @@ namespace Minesweeper
             }
         }
 
-        private void Suspense(object _1, MouseButtonEventArgs _2)
+        void Suspense(object _1, MouseButtonEventArgs _2)
         {
             if (Face.Source == Images.Happy)
             {

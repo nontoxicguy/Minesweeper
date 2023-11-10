@@ -1,5 +1,5 @@
 using Microsoft.Win32;
-using Minesweeper.Network;
+using Minesweeper.NeatNetwork;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -10,31 +10,32 @@ using System.Windows;
 
 namespace Minesweeper
 {
-    internal class AI
+    class AI
     {
-        private readonly NeuralNetwork[] _ais = new NeuralNetwork[100];
+        readonly NeuralNetwork[] _ais = new NeuralNetwork[100];
 
-        private readonly MinesweeperGame _mainWindow;
+        readonly MinesweeperGame _mainWindow;
 
-        private readonly Random random = new();
+        readonly Random random = new();
 
         public ushort WaitTime;
 
-        private NeuralNetwork best;
+        NeuralNetwork best;
 
-        private readonly SaveFileDialog _saveDialog = new()
+        readonly SaveFileDialog _saveDialog = new()
         {
             InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves",
             DefaultExt = ".json"
         };
 
-        private readonly JsonSerializerOptions
+        readonly JsonSerializerOptions
             _serializeOptions = new()
             {
                 Converters = { new Connection.Converter() }
             },
             _deserializeOptions = new()
             {
+                IncludeFields = true,
                 ReferenceHandler = ReferenceHandler.Preserve
             };
 
@@ -68,11 +69,11 @@ namespace Minesweeper
             {
                 _ais[0] = Load(json);
             }
-            catch (JsonException)
+            catch (Exception e) when (e is JsonException or NullReferenceException)
             {
                 MessageBox.Show("Invalid JSON provided", "Error while loading");
+                
                 success = false;
-                best = null!;
                 return;
             }
 
@@ -87,7 +88,7 @@ namespace Minesweeper
             }
         }
 
-        private NeuralNetwork Load(string json)
+        NeuralNetwork Load(in string json)
         {
             NeuralNetwork loaded = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!;
 
@@ -112,13 +113,13 @@ namespace Minesweeper
             if (_saveDialog.ShowDialog() == true)
             {
                 string json = JsonSerializer.Serialize(best, _serializeOptions);
-                ((Connection.Converter)_serializeOptions.Converters[0]).CurrentJsonId = 0;
+                ((Connection.Converter)_serializeOptions.Converters[0]).FinishSerialization();
 
                 File.WriteAllText(_saveDialog.FileName, json);
             }
         }
 
-        private void Mix(NeuralNetwork killed)
+        void Mix(NeuralNetwork killed)
         {
             if (killed.Hidden.Count > best.Hidden.Count)
             {
@@ -177,7 +178,7 @@ namespace Minesweeper
             }
         }
 
-        public async Task Train(CancellationToken cancelToken)
+        internal async Task Train(CancellationToken cancelToken)
         {
             while (true)
             {

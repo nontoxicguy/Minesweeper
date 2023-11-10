@@ -2,7 +2,7 @@
 
 namespace Minesweeper
 {
-    internal struct Square
+    struct Square
     {
         internal Image GridImage;
 

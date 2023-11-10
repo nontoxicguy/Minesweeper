@@ -2,22 +2,18 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Minesweeper.Network
+namespace Minesweeper.NeatNetwork
 {
-    internal class Connection
+    class Connection
     {
         public float Weight;
 
         internal IInputNeuron Input;
         internal IOutputNeuron Output;
 
-        internal int? JsonId;
+        int? _jsonId;
 
-        public Connection()
-        {
-            Input = null!;
-            Output = null!;
-        }
+        public Connection(float weight) => Weight = weight;
 
         internal Connection(IInputNeuron input, IOutputNeuron output)
         {
@@ -36,30 +32,28 @@ namespace Minesweeper.Network
 
         internal class Converter : JsonConverter<Connection>
         {
-            internal int CurrentJsonId = 0;
+            int CurrentJsonId = 0;
+            
+            internal void FinishSerialization() => CurrentJsonId = 0;
 
-            public override Connection? Read(
-                ref Utf8JsonReader reader,
-                Type typeToConvert,
-                JsonSerializerOptions options)
-                => throw new NotSupportedException("Connection converter only for writing!");
+            public override Connection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotSupportedException("Connection converter only for writing!");
 
             public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions options)
             {
                 writer.WriteStartObject();
 
-                if (value.JsonId == null)
+                if (value._jsonId == null)
                 {
-                    value.JsonId = ++CurrentJsonId;
+                    value._jsonId = ++CurrentJsonId;
 
-                    writer.WriteString("$id", value.JsonId.ToString());
+                    writer.WriteString("$id", value._jsonId.ToString());
                     writer.WriteNumber("Weight", value.Weight);
                 }
                 else
                 {
-                    writer.WriteString("$ref", value.JsonId.ToString());
+                    writer.WriteString("$ref", value._jsonId.ToString());
 
-                    value.JsonId = null;
+                    value._jsonId = null;
                 }
 
                 writer.WriteEndObject();

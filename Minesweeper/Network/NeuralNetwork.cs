@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Minesweeper.Network
+namespace Minesweeper.NeatNetwork
 {
-    internal partial class NeuralNetwork
+    partial class NeuralNetwork
     {
         [JsonInclude]
         public InputNeuron[] Inputs = new InputNeuron[80];
@@ -16,6 +16,8 @@ namespace Minesweeper.Network
         public OutputNeuron Output = new();
 
         internal int Score = 0;
+
+        private int _maxLayer = 0;
 
         public NeuralNetwork()
         {
@@ -32,11 +34,6 @@ namespace Minesweeper.Network
 
         internal byte Process()
         {
-            if (Output.Ins.Count == 0)
-            {
-                return 0;
-            }
-
             foreach (IGrouping<int, HiddenNeuron> layer in Hidden.GroupBy(h => h.Layer))
             {
                 foreach (HiddenNeuron neuron in layer)
@@ -45,7 +42,7 @@ namespace Minesweeper.Network
                 }
             }
 
-            return (byte)(Output.Ins.Sum(c => c.Input.Value)! % 3);
+            return (byte)(Output.Ins.Sum(c => c.Input.Value) % 3);
         }
     }
 }

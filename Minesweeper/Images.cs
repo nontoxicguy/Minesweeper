@@ -5,9 +5,9 @@ using System.Windows.Media.Imaging;
 
 namespace Minesweeper
 {
-    static internal class Images
+    static class Images
     {
-        public static readonly ImageSource[] Numbers = new ImageSource[9]
+        internal static readonly ImageSource[] Numbers = new ImageSource[9]
         {
             CreateImage("0"),
             CreateImage("1"),
@@ -20,18 +20,17 @@ namespace Minesweeper
             CreateImage("8")
         };
 
-        public static readonly ImageSource
+        public static readonly ImageSource Happy = CreateImage("HappyFace");
+        internal static readonly ImageSource
             Normal = CreateImage("Normal"),
             Flag = CreateImage("Flag"),
             Bomb = CreateImage("Bomb"),
             FalseFlag = CreateImage("FalseFlag"),
-
-            Happy = CreateImage("HappyFace"),
             Suspense = CreateImage("SuspenseFace"),
             Dead = CreateImage("DeadFace"),
             Cool = CreateImage("CoolFace");
 
-        public static readonly Dictionary<ImageSource, sbyte> GridMaker = new()
+        internal static readonly Dictionary<ImageSource, sbyte> GridMaker = new()
         {
             { Normal, -2 },
             { Flag, -1 },
@@ -46,7 +45,6 @@ namespace Minesweeper
             { Numbers[8], 8 }
         };
 
-        private static ImageSource CreateImage(string name) =>
-            new BitmapImage(new Uri($"Images/{name}.png", UriKind.Relative));
+        static ImageSource CreateImage(string name) => new BitmapImage(new($"Images/{name}.png", UriKind.Relative));
     }
 }

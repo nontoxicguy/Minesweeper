@@ -1,50 +1,50 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Minesweeper.Network
+namespace Minesweeper.NeatNetwork
 {
-    internal class InputNeuron : IInputNeuron
+    class InputNeuron : IInputNeuron
     {
         [JsonIgnore]
         public float Value { get; set; }
 
-        internal readonly sbyte
+        [JsonInclude]
+        public readonly sbyte
             OffsetX = 0,
             OffsetY = 0;
 
-        [JsonInclude]
         public List<Connection> Outs { get; set; } = new();
 
-        public InputNeuron() { }
-
-        internal InputNeuron(sbyte x, sbyte y)
+        public InputNeuron(sbyte offsetX, sbyte offsetY)
         {
-            OffsetX = x;
-            OffsetY = y;
+            OffsetX = offsetX;
+            OffsetY = offsetY;
         }
     }
 
-    internal class HiddenNeuron : IInputNeuron, IOutputNeuron
+    class HiddenNeuron : IInputNeuron, IOutputNeuron
     {
         [JsonIgnore]
         public float Value { get; set; }
 
         [JsonInclude]
-        public int Layer;
+        public readonly int Layer;
 
-        [JsonInclude]
         public byte FunctionIndex;
 
-        [JsonInclude]
         public List<Connection> Ins { get; set; } = new();
 
-        [JsonInclude]
         public List<Connection> Outs { get; set; } = new();
+        
+        public HiddenNeuron(int layer, byte functionIndex)
+        {
+            Layer = layer;
+            FunctionIndex = functionIndex;
+        }
     }
 
-    internal class OutputNeuron : IOutputNeuron
+    class OutputNeuron : IOutputNeuron
     {
-        [JsonInclude]
         public List<Connection> Ins { get; set; } = new();
     }
 }

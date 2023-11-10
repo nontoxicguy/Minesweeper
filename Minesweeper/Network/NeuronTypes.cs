@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 
-namespace Minesweeper.Network
+namespace Minesweeper.NeatNetwork
 {
-    internal interface IInputNeuron
+    interface IInputNeuron
     {
         public float Value { get; set; }
 
         public List<Connection> Outs { get; set; }
     }
 
-    internal interface IOutputNeuron
+    interface IOutputNeuron
     {
         public List<Connection> Ins { get; set; }
     }

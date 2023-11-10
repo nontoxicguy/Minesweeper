@@ -57,7 +57,7 @@
                             MaxLength="2"
                             BorderBrush="Black"
                             PreviewTextInput="CanEnterText"
-                            PreviewKeyDown="ChangeSize"
+                            KeyDown="ChangeSize"
                             Margin="2,7"/>
     
                         <TextBlock
@@ -74,7 +74,7 @@
                             MaxLength="4"
                             BorderBrush="Black"
                             PreviewTextInput="CanEnterText"
-                            PreviewKeyDown="ChangeMineCount"
+                            KeyDown="ChangeMineCount"
                             Margin="40,7"/>
     
                         <TextBlock
@@ -132,8 +132,7 @@
                 BorderThickness="0"
                 Click="Options">
     
-                <Image
-                    Source="Images/Options.png"/>
+                <Image Source="Images/Options.png"/>
             </Button>
     
             <Border

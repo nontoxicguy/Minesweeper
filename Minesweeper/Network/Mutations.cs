@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Minesweeper.Network
+namespace Minesweeper.NeatNetwork
 {
-    internal partial class NeuralNetwork
+    partial class NeuralNetwork
     {
         internal void Mutate()
         {
@@ -49,11 +49,9 @@ namespace Minesweeper.Network
 
         internal void AddHidden(Random random)
         {
-            HiddenNeuron added = new()
-            {
-                Layer = Hidden.Any() ? random.Next(Hidden.Max(h => h.Layer) + 2) : 0,
-                FunctionIndex = (byte)random.Next(AI.ActivationFunctions.Length)
-            };
+            int layer = random.Next(_maxLayer + 2);
+            _maxLayer = Math.Max(_maxLayer, layer);
+            HiddenNeuron added = new(layer, (byte)random.Next(AI.ActivationFunctions.Length));
             Hidden.Add(added);
 
             IEnumerable<Connection> connections = Inputs
@@ -73,7 +71,7 @@ namespace Minesweeper.Network
             }
         }
 
-        private void AddConnection(Random random)
+        void AddConnection(Random random)
         {
             IEnumerable<IInputNeuron> inputs = Inputs
                 .Cast<IInputNeuron>()
