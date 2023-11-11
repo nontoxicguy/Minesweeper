@@ -18,7 +18,7 @@ partial class NeuralNetwork
             case int i when i < 8:
                 AddConnection(random);
                 return;
-            case int i when i < 28:
+            case int i when i < 28: // ModifyWeight
                 IEnumerable<Connection> connections = Inputs
                     .Cast<IInputNeuron>()
                     .Concat(Hidden)
@@ -33,7 +33,7 @@ partial class NeuralNetwork
                 connections.ElementAt(random.Next(connections.Count())).Weight += random.NextSingle() * 2 - 1;
 
                 return;
-            default:
+            default: // ChangeActivationFunction
                 if (Hidden.Count == 0)
                 {
                     AddHidden(random);

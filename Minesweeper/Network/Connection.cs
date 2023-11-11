@@ -13,7 +13,7 @@ class Connection
 
     int? _jsonId;
 
-    public Connection(float weight) => Weight = weight;
+    public Connection(float weight) => Weight = weight; // for json deserialization
 
     internal Connection(IInputNeuron input, IOutputNeuron output)
     {
@@ -30,6 +30,7 @@ class Connection
         Output.Ins.Remove(this);
     }
 
+    // This thing keeps references in JSON while not giving ids for other objects
     internal class Converter : JsonConverter<Connection>
     {
         int _currentJsonId = 0;

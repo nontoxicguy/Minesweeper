@@ -13,12 +13,13 @@ partial class NeuralNetwork
     public List<HiddenNeuron> Hidden = new();
 
     [JsonInclude]
-    public OutputNeuron Output = new();
+    public OutputNeuron Output = new(); // I only needed one output
 
     internal int Score = 0;
 
-    private int _maxLayer = 0;
+    int _maxLayer = 0;
 
+    // Initializes every input with an offset from -4 to 4
     public NeuralNetwork()
     {
         for (byte i = 0; i < 40; ++i)
@@ -32,6 +33,7 @@ partial class NeuralNetwork
         }
     }
 
+    // Gives the output of the neural network
     internal byte Process()
     {
         foreach (IGrouping<int, HiddenNeuron> layer in Hidden.GroupBy(h => h.Layer))

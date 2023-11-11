@@ -3,7 +3,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:minesweeper="clr-namespace:Minesweeper"
     mc:Ignorable="d"
     Icon="Images/Bomb.png"
     Title="Minesweeper"
@@ -27,17 +26,17 @@
                 BorderThickness="1">
     
                 <Canvas>
-                    <UniformGrid x:Name="GameGrid"
+                    <UniformGrid Name="GameGrid"
                         Rows="25"
                         Columns="25"
                         MouseLeftButtonDown="Suspense"
                         Width="78"
                         Height="78"/>
     
-                    <Canvas x:Name="OptionsMenu"
+                    <Canvas Name="OptionsMenu"
                         Visibility="Hidden">
                         
-                        <ComboBox x:Name="AISpeedBox"
+                        <ComboBox Name="AISpeedBox"
                             Margin="10,32"
                             FontSize="7"
                             IsEditable="True"
@@ -51,7 +50,7 @@
                             <ComboBoxItem Content="Computer"/>
                         </ComboBox>
     
-                        <TextBox x:Name="SizeBox"
+                        <TextBox Name="SizeBox"
                             Width="37"
                             Text="25"
                             MaxLength="2"
@@ -68,7 +67,7 @@
                             Width="27"
                             Canvas.Left="7"/>
     
-                        <TextBox x:Name="MinesBox"
+                        <TextBox Name="MinesBox"
                             Width="36"
                             Text="125"
                             MaxLength="4"
@@ -108,7 +107,7 @@
                 BorderThickness="1"
                 Margin="1,1,61,82">
     
-                <TextBlock x:Name="Mines"
+                <TextBlock Name="Mines"
                     FontSize="7"
                     Foreground="Red"
                     FontWeight="Bold"
@@ -122,8 +121,7 @@
                 BorderThickness="0"
                 Click="NewGame">
     
-                <Image x:Name="Face"
-                    Source="{x:Static minesweeper:Images.Happy}"/>
+                <Image Source="{Binding Face}"/>
             </Button>
     
             <Button
@@ -141,7 +139,7 @@
                 BorderThickness="1"
                 Margin="61,1,1,82">
     
-                <TextBlock x:Name="Time"
+                <TextBlock Name="Time"
                     FontSize="7"
                     Foreground="Red"
                     FontWeight="Bold"

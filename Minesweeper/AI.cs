@@ -18,7 +18,7 @@ class AI
 
     readonly Random random = new();
 
-    public ushort WaitTime;
+    public ushort WaitTime; // crash without this
 
     NeuralNetwork best;
 
@@ -58,6 +58,7 @@ class AI
         }
     }
 
+    // create new AI with given JSON file path
     internal AI(MinesweeperGame game, string toLoadPath, out bool success)
     {
         _game = game;
@@ -120,6 +121,7 @@ class AI
 
     void Mix(NeuralNetwork killed)
     {
+        // balance number of hidden neurons
         if (killed.Hidden.Count > best.Hidden.Count)
         {
             int index = random.Next(killed.Hidden.Count);
@@ -135,6 +137,7 @@ class AI
         int hiddenLength = Math.Min(killed.Hidden.Count, best.Hidden.Count);
         for (int i = 0; i < hiddenLength; ++i)
         {
+            // balance number of connections
             if (killed.Hidden[i].Outs.Count > best.Hidden[i].Outs.Count)
             {
                 killed.Hidden[i].Outs[random.Next(killed.Hidden[i].Outs.Count)].Destroy();
@@ -144,18 +147,21 @@ class AI
                 killed.AddNeuronOut(random, killed.Hidden[i]);
             }
 
+            // balance weights
             int outsLength = Math.Min(killed.Hidden[i].Outs.Count, best.Hidden[i].Outs.Count);
             for (int j = 0; j < outsLength; ++j)
             {
                 killed.Hidden[i].Outs[j].Weight = (killed.Hidden[i].Outs[j].Weight + best.Hidden[i].Outs[j].Weight) / 2;
             }
-
-            if (random.Next(2) == 0)
+            
+            // balance functions
+            if (killed.Hidden[i].FunctionIndex != best.Hidden[i].FunctionIndex && random.Next(2) == 0)
             {
                 killed.Hidden[i].FunctionIndex = best.Hidden[i].FunctionIndex;
             }
         }
 
+        // same thing but for inputs (without functions)
         for (byte i = 0; i < 80; ++i)
         {
             if (killed.Inputs[i].Outs.Count > best.Inputs[i].Outs.Count)
@@ -179,7 +185,7 @@ class AI
 
     internal async Task Train(CancellationToken cancelToken)
     {
-        while (true)
+        while (true) // task may be cancelled
         {
             byte bestIndex = 0;
 
@@ -198,8 +204,9 @@ class AI
                     {
                         for (byte y = 0; y < _game.GameGrid.Rows; ++y)
                         {
-                            if (!_game.Tiles[x, y].CanTell) continue;
+                            if (!_game.Tiles[x, y].CanTell) continue; // can't tell so skip
 
+                            // prepare the inputs
                             foreach (InputNeuron input in _ais[n].Inputs)
                             {
                                 int
@@ -218,11 +225,13 @@ class AI
 
                             switch (_ais[n].Process())
                             {
+                                // AI chose to reveal
                                 case 1:
                                     await Task.Delay(WaitTime, cancelToken);
                                     locked = false;
                                     ++i;
 
+                                    // AI revealed a bomb
                                     if (_game.Tiles[x, y].IsBomb)
                                     {
                                         _ais[n].Score -= 5;
@@ -234,33 +243,36 @@ class AI
                                     ++_ais[n].Score;
                                     _game.Reveal(x, y);
 
-                                    if (_game.Face.Source == Images.Cool)
+                                    // AI won maybe by luck
+                                    if (_game.Face == Images.Cool)
                                     {
                                         _game.NewGame();
                                         _game.Reveal((byte)random.Next(_game.GameGrid.Columns), (byte)random.Next(_game.GameGrid.Rows));
                                     }
 
                                     continue;
+                                // AI chose to flag
                                 case 2:
-                                    _game.Tiles[x, y].Source = Images.Flag;
-                                    _game.Tiles[x, y].CanTell = false;
-
                                     await Task.Delay(WaitTime, cancelToken);
                                     locked = false;
                                     ++i;
+
+                                    _game.Tiles[x, y].Source = Images.Flag;
+                                    _game.Tiles[x, y].CanTell = false;
 
                                     continue;
                             }
                         }
                     }
 
+                    // AI did 0 moves looking at every tile one by one we say it is stupid and we stop its turn
                     if (locked)
                     {
                         await Task.Delay(WaitTime, cancelToken);
                         break;
                     }
                 }
-
+                
                 if (_ais[n].Score > _ais[bestIndex].Score)
                 {
                     bestIndex = n;

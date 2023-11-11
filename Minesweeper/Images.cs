@@ -20,16 +20,20 @@ static class Images
         CreateImage("8")
     };
 
-    public static readonly ImageSource Happy = CreateImage("HappyFace");
     internal static readonly ImageSource
+        // revealed tiles
         Normal = CreateImage("Normal"),
         Flag = CreateImage("Flag"),
         Bomb = CreateImage("Bomb"),
         FalseFlag = CreateImage("FalseFlag"),
-        Suspense = CreateImage("SuspenseFace"),
+
+        // faces
+        Happy = CreateImage("HappyFace"),
+        Suspense = CreateImage("SuspenseFace"), // about to reveal
         Dead = CreateImage("DeadFace"),
         Cool = CreateImage("CoolFace");
 
+    // takes a tile and returns the input the AI will use
     internal static readonly Dictionary<ImageSource, sbyte> GridMaker = new()
     {
         { Normal, -2 },

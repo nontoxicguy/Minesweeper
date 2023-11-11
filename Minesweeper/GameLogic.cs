@@ -1,17 +1,30 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Minesweeper;
 
-sealed partial class MinesweeperGame : Window
+sealed partial class MinesweeperGame : Window, INotifyPropertyChanged
 {
     AI? _ai;
+
+    ImageSource _face = Images.Happy;
+    public ImageSource Face
+    {
+        get => _face;
+        set
+        {
+            _face = value;
+            PropertyChanged?.Invoke(this, new(nameof(Face)));
+        }
+    }
 
     internal Tile[,] Tiles { get; private set; } = new Tile[25, 25];
         
@@ -27,14 +40,18 @@ sealed partial class MinesweeperGame : Window
         InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
     };
 
-    int
+    short
         _time = 0,
         _totalMines = 125,
         _safeSpotsLeft = 500,
         _minesLeft = 125;
 
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     MinesweeperGame()
     {
+        DataContext = this; // needed for face binding
+
         _timer.Elapsed += (_, _) => Dispatcher.Invoke(() =>
         {
             if (++_time == 999)
@@ -65,9 +82,10 @@ sealed partial class MinesweeperGame : Window
                     Source = Images.Normal
                 };
 
+                // human's flag
                 image.MouseRightButtonDown += (_, _) => 
                 {
-                    if (Face.Source != Images.Happy) return;
+                    if (Face != Images.Happy) return;
 
                     if (Tiles[copyX, copyY].Source == Images.Normal)
                     {
@@ -83,10 +101,11 @@ sealed partial class MinesweeperGame : Window
                     }
                 };
 
+                // human's reveal
                 image.MouseLeftButtonUp += (_, _) =>
                 {
-                    if (Face.Source != Images.Suspense) return;
-                    Face.Source = Images.Happy;
+                    if (Face != Images.Suspense) return;
+                    Face = Images.Happy;
 
                     if (_start)
                     {
@@ -102,9 +121,10 @@ sealed partial class MinesweeperGame : Window
         }
     }
 
+    // human's NewGame
     void NewGame(object _1, RoutedEventArgs _2)
     {
-        Face.Source = Images.Happy;
+        Face = Images.Happy;
 
         Time.Text = "0";
         _timer.Stop();
@@ -129,14 +149,14 @@ sealed partial class MinesweeperGame : Window
             }
         }
 
-        _safeSpotsLeft = Tiles.Length - _totalMines;
+        _safeSpotsLeft = (short)(Tiles.Length - _totalMines);
     }
 
     void SaveAI(object _1, RoutedEventArgs _2) => _ai?.Save();
 
     void LoadAI(object _1, RoutedEventArgs _2)
     {
-        if (_aiSelect.ShowDialog() == true)
+        if (_aiSelect.ShowDialog() == true) // ShowDialog returns a nullable bool so == true is needed
         {
             AI loaded = new(this, _aiSelect.FileName, out bool validJson);
             if (validJson)
@@ -164,7 +184,7 @@ sealed partial class MinesweeperGame : Window
                 _ai.WaitTime = 1000;
                 break;
             case "Timelapse":
-                _ai.WaitTime = 50;
+                _ai.WaitTime = 75;
                 break;
             case "Computer":
                 _ai.WaitTime = 1;
@@ -174,16 +194,16 @@ sealed partial class MinesweeperGame : Window
         _timer.Stop();
         Time.Text = "0";
 
-        Face.Source = Images.Happy;
+        Face = Images.Happy;
 
         _ = _ai.Train(_trainCancel.Token);
     }
 
     void ChangeMineCount(object _, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || SizeBox.Text == string.Empty) return;
+        if (e.Key != Key.Enter || MinesBox.Text == string.Empty) return;
 
-        _totalMines = Math.Clamp(short.Parse(MinesBox.Text), 1, Tiles.Length - 9);
+        _totalMines = (short)Math.Clamp(short.Parse(MinesBox.Text), 1, Tiles.Length - 9);
 
         NewGame(null!, null!);
     }
@@ -194,15 +214,16 @@ sealed partial class MinesweeperGame : Window
 
         byte newSize = Math.Clamp(byte.Parse(SizeBox.Text), (byte)5, (byte)50);
 
-        GameGrid.Children.Clear();
         Tiles = new Tile[newSize, newSize];
 
+        GameGrid.Children.Clear();
         GameGrid.Rows = newSize;
         GameGrid.Columns = newSize;
 
-        if (Tiles.Length - 9 <= _totalMines)
+        // if the new grid is not big enough to contain all the mines we put a reasonable number of mines
+        if (Tiles.Length - 9 < _totalMines)
         {
-            _totalMines = Tiles.Length / 5;
+            _totalMines = (short)(Tiles.Length / 5);
         }
 
         SetupGrid();
@@ -211,6 +232,7 @@ sealed partial class MinesweeperGame : Window
 
     internal void Reveal(byte x, byte y)
     {
+        // if the game must start next reveal (now) setup the mines
         if (_start)
         {
             _start = false;
@@ -239,43 +261,45 @@ sealed partial class MinesweeperGame : Window
             }
         }
 
-        if (Tiles[x, y].Source == Images.Normal)
+        if (Tiles[x, y].Source != Images.Normal) return; // already revealed or flagged
+        
+        // revealed a bomb, now die and show the bombs and false flags
+        if (Tiles[x, y].IsBomb)
         {
-            if (Tiles[x, y].IsBomb)
+            Face = Images.Dead;
+            _timer.Stop();
+
+            foreach (Tile tile in Tiles)
             {
-                Face.Source = Images.Dead;
-
-                _timer.Stop();
-
-                foreach (Tile tile in Tiles)
+                if (tile.IsBomb)
                 {
-                    if (tile.IsBomb)
+                    if (tile.Source == Images.Normal)
                     {
-                        if (tile.Source == Images.Normal)
-                        {
-                            tile.Source = Images.Bomb;
-                        }
-                    }
-                    else if (tile.Source == Images.Flag)
-                    {
-                        tile.Source = Images.FalseFlag;
+                        tile.Source = Images.Bomb;
                     }
                 }
-
-                return;
+                else if (tile.Source == Images.Flag)
+                {
+                    tile.Source = Images.FalseFlag;
+                }
             }
 
-            SafeReveal(x, y);
+            return;
+        }
 
-            if (_safeSpotsLeft == 0)
-            {
-                Face.Source = Images.Cool;
-
-                _timer.Stop();
-            }
+        // not a bomb reveal and see if we won
+        SafeReveal(x, y);
+        if (_safeSpotsLeft == 0)
+        {
+            Face = Images.Cool;
+            _timer.Stop();
         }
     }
 
+    /// <summary>
+    /// Reveal but no bomb at given coordinates. no check is done
+    /// </summary>
+    /// <seealso cref="Reveal"/>
     void SafeReveal(int x, int y)
     {
         Tiles[x, y].CanTell = false;
@@ -307,11 +331,12 @@ sealed partial class MinesweeperGame : Window
         --_safeSpotsLeft;
     }
 
+    /// <see cref="Images.Suspense"/>
     void Suspense(object _1, MouseButtonEventArgs _2)
     {
-        if (Face.Source == Images.Happy)
+        if (Face == Images.Happy)
         {
-            Face.Source = Images.Suspense;
+            Face = Images.Suspense;
         }
     }
 }
