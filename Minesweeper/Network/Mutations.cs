@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Minesweeper.NeatNetwork;
 
-partial class NeuralNetwork
+sealed partial class NeuralNetwork
 {
     internal void Mutate()
     {

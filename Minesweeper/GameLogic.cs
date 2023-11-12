@@ -1,19 +1,22 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
+
+using ImageSource = System.Windows.Media.ImageSource;
 
 namespace Minesweeper;
 
 sealed partial class MinesweeperGame : Window, INotifyPropertyChanged
 {
     AI? _ai;
+
+    System.Threading.CancellationTokenSource _trainCancel = new();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     ImageSource _face = Images.Happy;
     public ImageSource Face
@@ -27,26 +30,22 @@ sealed partial class MinesweeperGame : Window, INotifyPropertyChanged
     }
 
     internal Tile[,] Tiles { get; private set; } = new Tile[25, 25];
-        
-    readonly System.Timers.Timer _timer = new(1000);
-
-    CancellationTokenSource _trainCancel = new();
 
     bool _start = true;
 
-    readonly OpenFileDialog _aiSelect = new()
+    readonly Microsoft.Win32.OpenFileDialog _aiSelect = new()
     {
         Filter = "JSON (*.json)|*.json",
         InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
     };
+
+    readonly System.Timers.Timer _timer = new(1000);
 
     short
         _time = 0,
         _totalMines = 125,
         _safeSpotsLeft = 500,
         _minesLeft = 125;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     MinesweeperGame()
     {
@@ -263,7 +262,7 @@ sealed partial class MinesweeperGame : Window, INotifyPropertyChanged
 
         if (Tiles[x, y].Source != Images.Normal) return; // already revealed or flagged
         
-        // revealed a bomb, now die and show the bombs and false flags
+        // revealed a bomb, show the bombs and false flags
         if (Tiles[x, y].IsBomb)
         {
             Face = Images.Dead;

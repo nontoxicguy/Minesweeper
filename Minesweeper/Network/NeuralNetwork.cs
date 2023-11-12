@@ -1,16 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
+﻿using System.Linq;
+
+using JsonInclude = System.Text.Json.Serialization.JsonIncludeAttribute;
 
 namespace Minesweeper.NeatNetwork;
 
-partial class NeuralNetwork
+sealed partial class NeuralNetwork
 {
     [JsonInclude]
     public InputNeuron[] Inputs = new InputNeuron[80];
 
     [JsonInclude]
-    public List<HiddenNeuron> Hidden = new();
+    public System.Collections.Generic.List<HiddenNeuron> Hidden = new();
 
     [JsonInclude]
     public OutputNeuron Output = new(); // I only needed one output

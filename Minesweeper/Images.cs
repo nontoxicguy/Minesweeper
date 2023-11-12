@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+﻿using ImageSource = System.Windows.Media.ImageSource;
 
 namespace Minesweeper;
 
@@ -34,7 +31,7 @@ static class Images
         Cool = CreateImage("CoolFace");
 
     // takes a tile and returns the input the AI will use
-    internal static readonly Dictionary<ImageSource, sbyte> GridMaker = new()
+    internal static readonly System.Collections.Generic.Dictionary<ImageSource, sbyte> GridMaker = new()
     {
         { Normal, -2 },
         { Flag, -1 },
@@ -49,5 +46,5 @@ static class Images
         { Numbers[8], 8 }
     };
 
-    static ImageSource CreateImage(string name) => new BitmapImage(new($"Images/{name}.png", UriKind.Relative));
+    static ImageSource CreateImage(string name) => new System.Windows.Media.Imaging.BitmapImage(new($"Images/{name}.png", System.UriKind.Relative));
 }

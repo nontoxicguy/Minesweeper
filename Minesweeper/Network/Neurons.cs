@@ -1,11 +1,12 @@
 ﻿// NOTE: if I switch to a C# version >= 12 then use primary constructors for input and hidden neurons
 
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Minesweeper.NeatNetwork;
 
-class InputNeuron : IInputNeuron
+using Connections = System.Collections.Generic.List<Connection>;
+
+sealed class InputNeuron : IInputNeuron
 {
     [JsonIgnore]
     public float Value { get; set; }
@@ -15,7 +16,7 @@ class InputNeuron : IInputNeuron
         OffsetX = 0,
         OffsetY = 0;
 
-    public List<Connection> Outs { get; init; } = new();
+    public Connections Outs { get; init; } = new();
 
     public InputNeuron(sbyte offsetX, sbyte offsetY)
     {
@@ -24,7 +25,7 @@ class InputNeuron : IInputNeuron
     }
 }
 
-class HiddenNeuron : IInputNeuron, IOutputNeuron
+sealed class HiddenNeuron : IInputNeuron, IOutputNeuron
 {
     [JsonIgnore]
     public float Value { get; set; }
@@ -34,9 +35,9 @@ class HiddenNeuron : IInputNeuron, IOutputNeuron
 
     public byte FunctionIndex;
 
-    public List<Connection> Ins { get; init; } = new();
+    public Connections Ins { get; init; } = new();
 
-    public List<Connection> Outs { get; init; } = new();
+    public Connections Outs { get; init; } = new();
         
     public HiddenNeuron(int layer, byte functionIndex)
     {
@@ -45,7 +46,7 @@ class HiddenNeuron : IInputNeuron, IOutputNeuron
     }
 }
 
-class OutputNeuron : IOutputNeuron
+sealed class OutputNeuron : IOutputNeuron
 {
-    public List<Connection> Ins { get; init; } = new();
+    public Connections Ins { get; init; } = new();
 }

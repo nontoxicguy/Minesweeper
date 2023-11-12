@@ -1,16 +1,14 @@
-using Microsoft.Win32;
 using Minesweeper.NeatNetwork;
 using System;
-using System.IO;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
+
+using static System.IO.File;
+
+using Task = System.Threading.Tasks.Task;
 
 namespace Minesweeper;
 
-class AI
+sealed class AI
 {
     readonly NeuralNetwork[] _ais = new NeuralNetwork[100];
 
@@ -22,7 +20,7 @@ class AI
 
     NeuralNetwork best;
 
-    readonly SaveFileDialog _saveDialog = new()
+    readonly Microsoft.Win32.SaveFileDialog _saveDialog = new()
     {
         InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves",
         DefaultExt = ".json"
@@ -36,7 +34,7 @@ class AI
         _deserializeOptions = new()
         {
             IncludeFields = true,
-            ReferenceHandler = ReferenceHandler.Preserve
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
         };
 
     internal static readonly Func<float, float>[] ActivationFunctions = new Func<float, float>[4]
@@ -63,7 +61,7 @@ class AI
     {
         _game = game;
 
-        string json = File.ReadAllText(toLoadPath);
+        string json = ReadAllText(toLoadPath);
 
         try
         {
@@ -71,7 +69,7 @@ class AI
         }
         catch (Exception e) when (e is JsonException or NullReferenceException)
         {
-            MessageBox.Show("Invalid JSON provided", "Error while loading");
+            System.Windows.MessageBox.Show("Invalid JSON provided", "Error while loading");
                 
             success = false;
             return;
@@ -115,7 +113,7 @@ class AI
             string json = JsonSerializer.Serialize(best, _serializeOptions);
             ((Connection.Converter)_serializeOptions.Converters[0]).FinishSerialization();
 
-            File.WriteAllText(_saveDialog.FileName, json);
+            WriteAllText(_saveDialog.FileName, json);
         }
     }
 
@@ -183,7 +181,7 @@ class AI
         }
     }
 
-    internal async Task Train(CancellationToken cancelToken)
+    internal async Task Train(System.Threading.CancellationToken cancelToken)
     {
         while (true) // task may be cancelled
         {

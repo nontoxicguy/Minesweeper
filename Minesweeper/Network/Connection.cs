@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Minesweeper.NeatNetwork;
 
-class Connection
+sealed class Connection
 {
     public float Weight;
 
@@ -31,7 +30,7 @@ class Connection
     }
 
     // This thing keeps references in JSON while not giving ids for other objects
-    internal class Converter : JsonConverter<Connection>
+    internal sealed class Converter : System.Text.Json.Serialization.JsonConverter<Connection>
     {
         int _currentJsonId = 0;
             
