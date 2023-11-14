@@ -1,5 +1,3 @@
-﻿// NOTE: if I switch to a C# version >= 12 then use primary constructors for input and hidden neurons
-
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
