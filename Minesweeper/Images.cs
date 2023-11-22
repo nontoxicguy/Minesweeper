@@ -1,11 +1,13 @@
-﻿using ImageSource = System.Windows.Media.ImageSource;
+﻿using System.Collections.ObjectModel;
+using Bitmap = System.Windows.Media.Imaging.BitmapImage;
+using ImageSource = System.Windows.Media.ImageSource;
 
 namespace Minesweeper;
 
 static class Images
 {
-    internal static readonly ImageSource[] Numbers = new ImageSource[9]
-    {
+    internal static readonly ReadOnlyCollection<Bitmap> Numbers = new(
+    [
         CreateImage("0"),
         CreateImage("1"),
         CreateImage("2"),
@@ -15,26 +17,22 @@ static class Images
         CreateImage("6"),
         CreateImage("7"),
         CreateImage("8")
-    };
+    ]);
 
-    internal static readonly ImageSource
-        // revealed tiles
-        Normal = CreateImage("Normal"),
-        Flag = CreateImage("Flag"),
-        Bomb = CreateImage("Bomb"),
-        FalseFlag = CreateImage("FalseFlag"),
+    internal static readonly Bitmap
+    Normal = CreateImage("Normal"),
+    Flag = CreateImage("Flag"),
+    Bomb = CreateImage("Bomb"),
+    FalseFlag = CreateImage("FalseFlag"),
+    Happy = CreateImage("HappyFace"),
+    Suspense = CreateImage("SuspenseFace"),
+    Dead = CreateImage("DeadFace"),
+    Cool = CreateImage("CoolFace");
 
-        // faces
-        Happy = CreateImage("HappyFace"),
-        Suspense = CreateImage("SuspenseFace"), // about to reveal
-        Dead = CreateImage("DeadFace"),
-        Cool = CreateImage("CoolFace");
-
-    // takes a tile and returns the input the AI will use
-    internal static readonly System.Collections.Generic.Dictionary<ImageSource, sbyte> GridMaker = new()
+    internal static readonly ReadOnlyDictionary<ImageSource, sbyte> TileToInput = new(new System.Collections.Generic.Dictionary<ImageSource, sbyte>
     {
-        { Normal, -2 },
         { Flag, -1 },
+        { Normal, 0 },
         { Numbers[0], 0 },
         { Numbers[1], 1 },
         { Numbers[2], 2 },
@@ -44,7 +42,7 @@ static class Images
         { Numbers[6], 6 },
         { Numbers[7], 7 },
         { Numbers[8], 8 }
-    };
+    });
 
-    static ImageSource CreateImage(string name) => new System.Windows.Media.Imaging.BitmapImage(new($"Images/{name}.png", System.UriKind.Relative));
+    static Bitmap CreateImage(string name) => new(new($"Images/{name}.png", System.UriKind.Relative));
 }

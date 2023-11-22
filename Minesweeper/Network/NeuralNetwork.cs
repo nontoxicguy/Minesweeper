@@ -1,8 +1,7 @@
 ﻿using System.Linq;
-
 using JsonInclude = System.Text.Json.Serialization.JsonIncludeAttribute;
 
-namespace Minesweeper.NeatNetwork;
+namespace Minesweeper.AINetwork;
 
 sealed partial class NeuralNetwork
 {
@@ -10,40 +9,43 @@ sealed partial class NeuralNetwork
     public InputNeuron[] Inputs = new InputNeuron[80];
 
     [JsonInclude]
-    public System.Collections.Generic.List<HiddenNeuron> Hidden = new();
+    public System.Collections.Generic.List<HiddenNeuron> Hidden = [];
 
     [JsonInclude]
-    public OutputNeuron Output = new(); // I only needed one output
+    public OutputNeuron Output = new();
 
-    internal int Score = 0;
+    internal int Score;
 
-    int _maxLayer = 0;
+    int _maxLayer;
 
-    // Initializes every input with an offset from -4 to 4
-    public NeuralNetwork()
+    internal void LoadSetup()
     {
-        for (byte i = 0; i < 40; ++i)
+        if (Inputs.Length != 80) throw new System.Text.Json.JsonException();
+
+        // We do not store Input and Output fields in JSON so we assign them here
+        foreach (var input in Inputs)
+            foreach (var connection in input.Outs)
+                connection.Input = input;
+
+        foreach (var hidden in Hidden)
         {
-            Inputs[i] = new((sbyte)(i % 9 - 4), (sbyte)(i / 9 - 4));
+            foreach (var connection in hidden.Ins)
+                connection.Output = hidden;
+
+            foreach (var connection in hidden.Outs)
+                connection.Input = hidden;
         }
 
-        for (byte i = 41; i < 81; ++i)
-        {
-            Inputs[i - 1] = new((sbyte)(i % 9 - 4), (sbyte)(i / 9 - 4));
-        }
+        foreach (var connection in Output.Ins)
+            connection.Output = Output;
     }
 
-    // Gives the output of the neural network
     internal byte Process()
     {
-        foreach (IGrouping<int, HiddenNeuron> layer in Hidden.GroupBy(h => h.Layer))
-        {
-            foreach (HiddenNeuron neuron in layer)
-            {
-                neuron.Value = AI.ActivationFunctions[neuron.FunctionIndex](neuron.Ins.Sum(i => i.Input.Value));
-            }
-        }
+        foreach (var layer in Hidden.GroupBy(h => h.Layer))
+            foreach (var neuron in layer)
+                neuron.Value = AI.ActivationFunctions[neuron.FunctionIndex](neuron.Ins.Sum(i => i.Input.Value * i.Weight));
 
-        return (byte)(Output.Ins.Sum(c => c.Input.Value) % 3);
+        return (byte)(Output.Ins.Sum(c => c.Input.Value * c.Weight) % 3);
     }
 }

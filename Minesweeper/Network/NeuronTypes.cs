@@ -1,15 +1,23 @@
-﻿namespace Minesweeper.NeatNetwork;
+﻿namespace Minesweeper.AINetwork;
 
 using Connections = System.Collections.Generic.List<Connection>;
 
-interface IInputNeuron
-{
-    public float Value { get; set; }
+// In the case I need it: I have a commented INeuron interface
+// If I need it but I still need only one output, make it an attribute
 
-    public Connections Outs { get; init; }
+// interface INeuron
+// {
+//     float Value { get; set; }
+// }
+
+interface IInputNeuron // : INeuron
+{
+    float Value { get; set; }
+
+    Connections Outs { get; init; }
 }
 
-interface IOutputNeuron
+interface IOutputNeuron // : INeuron
 {
-    public Connections Ins { get; init; }
+    Connections Ins { get; init; }
 }

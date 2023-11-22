@@ -1,16 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Images\Icon.ico</ApplicationIcon>
-    <NoWarn>CS8618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Images/*.png"/>
-    <Resource Include="Images/*.png"/>
+    <None Remove="Images/*.*"/>
+    <Resource Include="Images/*.*"/>
   </ItemGroup>
 
   <Target Name="AISaves maker"

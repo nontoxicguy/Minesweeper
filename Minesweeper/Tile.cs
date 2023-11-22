@@ -4,9 +4,8 @@ namespace Minesweeper;
 
 struct Tile
 {
-    internal bool
-        IsBomb,
-        CanTell; // Is the tile empty and next to a number
+    // CanTell: Is empty and next to a number
+    internal bool IsBomb, CanTell;
 
     Image _image;
     internal readonly System.Windows.Media.ImageSource Source

@@ -1,8 +1,6 @@
-﻿// NOTE: if I switch to a C# version >= 12 then use primary constructors for input and hidden neurons
+﻿using System.Text.Json.Serialization;
 
-using System.Text.Json.Serialization;
-
-namespace Minesweeper.NeatNetwork;
+namespace Minesweeper.AINetwork;
 
 using Connections = System.Collections.Generic.List<Connection>;
 
@@ -11,42 +9,41 @@ sealed class InputNeuron : IInputNeuron
     [JsonIgnore]
     public float Value { get; set; }
 
-    [JsonInclude]
-    public readonly sbyte
-        OffsetX = 0,
-        OffsetY = 0;
+    internal sbyte OffsetX { get; private set; }
+    internal sbyte OffsetY { get; private set; }
 
-    public Connections Outs { get; init; } = new();
+    public Connections Outs { get; init; } = [];
 
-    public InputNeuron(sbyte offsetX, sbyte offsetY)
+    // I didn't want to store offsets in the JSON so I made a little system that automatically sets them
+    static byte _currentOffset;
+
+    public InputNeuron()
     {
-        OffsetX = offsetX;
-        OffsetY = offsetY;
+        OffsetX = (sbyte)(_currentOffset % 9 - 4);
+        OffsetY = (sbyte)(_currentOffset / 9 - 4);
+        
+        if (++_currentOffset == 40) ++_currentOffset;
+        else if (_currentOffset == 80) _currentOffset = 0;
     }
 }
 
-sealed class HiddenNeuron : IInputNeuron, IOutputNeuron
+sealed class HiddenNeuron(int layer, byte functionIndex) : IInputNeuron, IOutputNeuron
 {
     [JsonIgnore]
     public float Value { get; set; }
 
     [JsonInclude]
-    public readonly int Layer;
+    public readonly int Layer = layer;
 
-    public byte FunctionIndex;
+    [JsonInclude]
+    public byte FunctionIndex = functionIndex;
 
-    public Connections Ins { get; init; } = new();
+    public Connections Ins { get; init; } = [];
 
-    public Connections Outs { get; init; } = new();
-        
-    public HiddenNeuron(int layer, byte functionIndex)
-    {
-        Layer = layer;
-        FunctionIndex = functionIndex;
-    }
+    public Connections Outs { get; init; } = [];
 }
 
 sealed class OutputNeuron : IOutputNeuron
 {
-    public Connections Ins { get; init; } = new();
+    public Connections Ins { get; init; } = [];
 }

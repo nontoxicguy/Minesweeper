@@ -1,26 +1,22 @@
-﻿using System;
-using System.Text.Json;
+﻿using System.Text.Json;
 
-namespace Minesweeper.NeatNetwork;
+namespace Minesweeper.AINetwork;
 
-sealed class Connection
+#pragma warning disable 8618
+sealed class Connection(float weight)
+#pragma warning restore 8618
 {
-    public float Weight;
+    public float Weight = weight;
 
     internal IInputNeuron Input;
     internal IOutputNeuron Output;
 
-    int? _jsonId;
+    string? _jsonId;
 
-    public Connection(float weight) => Weight = weight; // for json deserialization
-
-    internal Connection(IInputNeuron input, IOutputNeuron output)
+    internal Connection(IInputNeuron input, IOutputNeuron output) : this(1)
     {
-        Input = input;
-        input.Outs.Add(this);
-
-        Output = output;
-        output.Ins.Add(this);
+        (Input = input).Outs.Add(this);
+        (Output = output).Ins.Add(this);
     }
 
     public void Destroy()
@@ -29,30 +25,35 @@ sealed class Connection
         Output.Ins.Remove(this);
     }
 
-    // This thing keeps references in JSON while not giving ids for other objects
     internal sealed class Converter : System.Text.Json.Serialization.JsonConverter<Connection>
     {
-        int _currentJsonId = 0;
-            
-        internal void FinishSerialization() => _currentJsonId = 0;
+        int _currentId;
+        
+        internal void ResetId() => _currentId = 0;
 
-        public override Connection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotSupportedException("Connection converter only for writing!");
+        /// <summary>
+        /// Dummy method
+        /// </summary>
+        /// <returns>null</returns>
+        public override Connection? Read(ref Utf8JsonReader _1, System.Type _2, JsonSerializerOptions _3) => null;
 
-        public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions options)
+        /// <summary>
+        /// Serializes value on writer keeping references
+        /// </summary>
+        /// <param name="writer">The writer used to serialize</param>
+        /// <param name="value">The connection written on writer</param>
+        public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions _)
         {
             writer.WriteStartObject();
 
             if (value._jsonId == null)
             {
-                value._jsonId = ++_currentJsonId;
-
-                writer.WriteString("$id", value._jsonId.ToString());
+                writer.WriteString("$id", value._jsonId = (++_currentId).ToString());
                 writer.WriteNumber("Weight", value.Weight);
             }
             else
             {
-                writer.WriteString("$ref", value._jsonId.ToString());
-
+                writer.WriteString("$ref", value._jsonId);
                 value._jsonId = null;
             }
 

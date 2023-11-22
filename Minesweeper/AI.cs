@@ -1,295 +1,219 @@
-using Minesweeper.NeatNetwork;
 using System;
 using System.Text.Json;
-
-using static System.IO.File;
-
 using Task = System.Threading.Tasks.Task;
+using static System.IO.File;
 
 namespace Minesweeper;
 
+using AINetwork;
+
+// not a good name? Minesweeper.AI is great
 sealed class AI
 {
     readonly NeuralNetwork[] _ais = new NeuralNetwork[100];
 
-    readonly MinesweeperGame _game;
-
     readonly Random random = new();
 
-    public ushort WaitTime; // crash without this
+    internal ushort WaitTime;
 
     NeuralNetwork best;
 
     readonly Microsoft.Win32.SaveFileDialog _saveDialog = new()
     {
-        InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves",
-        DefaultExt = ".json"
+        DefaultExt = ".json",
+        InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
     };
 
     readonly JsonSerializerOptions
-        _serializeOptions = new()
-        {
-            Converters = { new Connection.Converter() }
-        },
-        _deserializeOptions = new()
-        {
-            IncludeFields = true,
-            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
-        };
-
-    internal static readonly Func<float, float>[] ActivationFunctions = new Func<float, float>[4]
+    _serializeOptions = new()
     {
-        x => x,
-        x => Math.Max(0, x),
-        x => (float)(1 / (1 + Math.Exp(-x))),
-        x => (float)Math.Tanh(x)
+        Converters =
+        {
+            new Connection.Converter()
+        }
+    },
+    _deserializeOptions = new()
+    {
+        IncludeFields = true,
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
     };
 
-    public AI(MinesweeperGame game)
-    {
-        _game = game;
+    internal static readonly System.Collections.ObjectModel.ReadOnlyCollection<Func<float, float>> ActivationFunctions = new(
+    [
+        x => x,
+        x => Math.Max(0, x),
+        x => 1 / (1 + MathF.Exp(-x)),
+        MathF.Tanh
+    ]);
 
-        for (byte i = 0; i < _ais.Length; ++i)
+#pragma warning disable 8618
+    internal AI()
+#pragma warning restore 8618
+    {
+        for (var i = 0; i < _ais.Length; ++i)
         {
             _ais[i] = new();
-            _ais[i].Mutate();
+            
+            for (var j = 0; j < 80; ++j)
+                _ais[i].Inputs[j] = new();
+
+            _ais[i].Mutate(random);
         }
     }
 
-    // create new AI with given JSON file path
-    internal AI(MinesweeperGame game, string toLoadPath, out bool success)
+#pragma warning disable 8618
+    internal AI(string toLoadPath, out bool success)
+#pragma warning restore 8618
     {
-        _game = game;
-
-        string json = ReadAllText(toLoadPath);
+        var json = ReadAllText(toLoadPath);
 
         try
         {
-            _ais[0] = Load(json);
+            (_ais[0] = best = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!).LoadSetup();
         }
-        catch (Exception e) when (e is JsonException or NullReferenceException)
+        catch
         {
             System.Windows.MessageBox.Show("Invalid JSON provided", "Error while loading");
-                
             success = false;
             return;
         }
 
         success = true;
 
-        best = _ais[0];
-
-        for (byte i = 1; i < _ais.Length; ++i)
+        // I chose the easy solution to make a deep copy
+        for (var i = 1; i < _ais.Length; ++i)
         {
-            _ais[i] = Load(json);
-            _ais[i].Mutate();
+            (_ais[i] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!).LoadSetup();
+            _ais[i].Mutate(random);
         }
-    }
-
-    NeuralNetwork Load(in string json)
-    {
-        NeuralNetwork loaded = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!;
-
-        foreach (InputNeuron input in loaded.Inputs)
-        {
-            input.Outs.ForEach(o => o.Input = input);
-        }
-
-        foreach (HiddenNeuron hidden in loaded.Hidden)
-        {
-            hidden.Ins.ForEach(i => i.Output = hidden);
-            hidden.Outs.ForEach(o => o.Input = hidden);
-        }
-
-        loaded.Output.Ins.ForEach(i => i.Output = loaded.Output);
-
-        return loaded;
     }
 
     internal void Save()
     {
         if (_saveDialog.ShowDialog() == true)
         {
-            string json = JsonSerializer.Serialize(best, _serializeOptions);
-            ((Connection.Converter)_serializeOptions.Converters[0]).FinishSerialization();
-
-            WriteAllText(_saveDialog.FileName, json);
+            WriteAllText(_saveDialog.FileName, JsonSerializer.Serialize(best, _serializeOptions));
+            ((Connection.Converter)_serializeOptions.Converters[0]).ResetId();
         }
     }
 
-    void Mix(NeuralNetwork killed)
+    internal async Task Train(Game game, System.Threading.CancellationToken cancelToken)
     {
-        // balance number of hidden neurons
-        if (killed.Hidden.Count > best.Hidden.Count)
+        do
         {
-            int index = random.Next(killed.Hidden.Count);
-            killed.Hidden[index].Ins.ForEach(i => i.Input.Outs.Remove(i));
-            killed.Hidden[index].Outs.ForEach(o => o.Output.Ins.Remove(o));
-            killed.Hidden.RemoveAt(index);
-        }
-        else if (killed.Hidden.Count < best.Hidden.Count)
-        {
-            killed.AddHidden(random);
-        }
+            var bestIndex = 0;
 
-        int hiddenLength = Math.Min(killed.Hidden.Count, best.Hidden.Count);
-        for (int i = 0; i < hiddenLength; ++i)
-        {
-            // balance number of connections
-            if (killed.Hidden[i].Outs.Count > best.Hidden[i].Outs.Count)
+            for (var n = 0; n < 100; ++n)
             {
-                killed.Hidden[i].Outs[random.Next(killed.Hidden[i].Outs.Count)].Destroy();
-            }
-            else if (killed.Hidden[i].Outs.Count < best.Hidden[i].Outs.Count)
-            {
-                killed.AddNeuronOut(random, killed.Hidden[i]);
-            }
-
-            // balance weights
-            int outsLength = Math.Min(killed.Hidden[i].Outs.Count, best.Hidden[i].Outs.Count);
-            for (int j = 0; j < outsLength; ++j)
-            {
-                killed.Hidden[i].Outs[j].Weight = (killed.Hidden[i].Outs[j].Weight + best.Hidden[i].Outs[j].Weight) / 2;
-            }
-            
-            // balance functions
-            if (killed.Hidden[i].FunctionIndex != best.Hidden[i].FunctionIndex && random.Next(2) == 0)
-            {
-                killed.Hidden[i].FunctionIndex = best.Hidden[i].FunctionIndex;
-            }
-        }
-
-        // same thing but for inputs (without functions)
-        for (byte i = 0; i < 80; ++i)
-        {
-            if (killed.Inputs[i].Outs.Count > best.Inputs[i].Outs.Count)
-            {
-                killed.Inputs[i].Outs[random.Next(killed.Inputs[i].Outs.Count)].Destroy();
-            }
-            else if (killed.Inputs[i].Outs.Count < best.Inputs[i].Outs.Count)
-            {
-                int outputIndex = random.Next(killed.Hidden.Count + 1);
-
-                _ = new Connection(killed.Inputs[i], outputIndex == killed.Hidden.Count ? killed.Output : killed.Hidden[outputIndex]);
-            }
-
-            int outsLength = Math.Min(killed.Inputs[i].Outs.Count, best.Inputs[i].Outs.Count);
-            for (int j = 0; j < outsLength; ++j)
-            {
-                killed.Inputs[i].Outs[j].Weight = (killed.Inputs[i].Outs[j].Weight + best.Inputs[i].Outs[j].Weight) / 2;
-            }
-        }
-    }
-
-    internal async Task Train(System.Threading.CancellationToken cancelToken)
-    {
-        while (true) // task may be cancelled
-        {
-            byte bestIndex = 0;
-
-            for (byte n = 0; n < 100; ++n)
-            {
-                _game.NewGame();
-                _game.Reveal((byte)random.Next(_game.GameGrid.Columns), (byte)random.Next(_game.GameGrid.Rows));
-
+                NewGame();
                 _ais[n].Score = 0;
 
                 for (short i = 0; i < 1000; i += 10)
-                {
-                    bool locked = true;
-
-                    for (byte x = 0; x < _game.GameGrid.Columns; ++x)
-                    {
-                        for (byte y = 0; y < _game.GameGrid.Rows; ++y)
+                    for (var x = 0; x < game.GameGrid.Columns; ++x)
+                        for (var y = 0; y < game.GameGrid.Rows; ++y)
                         {
-                            if (!_game.Tiles[x, y].CanTell) continue; // can't tell so skip
+                            if (!game.Tiles[x, y].CanTell) continue;
 
-                            // prepare the inputs
-                            foreach (InputNeuron input in _ais[n].Inputs)
+                            // AI can do something on this square so we setup the inputs in the grid
+                            foreach (var input in _ais[n].Inputs)
                             {
-                                int
-                                    inputX = x + input.OffsetX,
-                                    inputY = y + input.OffsetY;
-
-                                if ((inputX != 0 || inputY != 0)
-                                    && inputX >= 0
-                                    && inputY >= 0
-                                    && inputX < _game.GameGrid.Columns
-                                    && inputY < _game.GameGrid.Rows)
-                                {
-                                    input.Value = Images.GridMaker[_game.Tiles[inputX, inputY].Source];
-                                }
+                                int inputX = x + input.OffsetX, inputY = y + input.OffsetY;
+                                input.Value = inputX >= 0 && inputY >= 0 && inputX < game.GameGrid.Columns && inputY < game.GameGrid.Rows ? Images.TileToInput[game.Tiles[inputX, inputY].Source] : 0;
                             }
 
                             switch (_ais[n].Process())
                             {
-                                // AI chose to reveal
-                                case 1:
-                                    await Task.Delay(WaitTime, cancelToken);
-                                    locked = false;
+                                case 1: // Reveal
                                     ++i;
 
-                                    // AI revealed a bomb
-                                    if (_game.Tiles[x, y].IsBomb)
+                                    if (game.Tiles[x, y].IsBomb) // AI never reveals any bomb because we stop it
                                     {
                                         _ais[n].Score -= 5;
-                                        _game.NewGame();
-                                        _game.Reveal((byte)random.Next(_game.GameGrid.Columns), (byte)random.Next(_game.GameGrid.Rows));
+                                        NewGame();
                                         continue;
                                     }
 
                                     ++_ais[n].Score;
-                                    _game.Reveal(x, y);
+                                    game.Reveal(x, y);
 
-                                    // AI won maybe by luck
-                                    if (_game.Face == Images.Cool)
-                                    {
-                                        _game.NewGame();
-                                        _game.Reveal((byte)random.Next(_game.GameGrid.Columns), (byte)random.Next(_game.GameGrid.Rows));
-                                    }
+                                    if (game.Face.Source == Images.Cool) NewGame();
 
-                                    continue;
-                                // AI chose to flag
-                                case 2:
                                     await Task.Delay(WaitTime, cancelToken);
-                                    locked = false;
+                                    continue;
+                                case 2: // Flag
                                     ++i;
 
-                                    _game.Tiles[x, y].Source = Images.Flag;
-                                    _game.Tiles[x, y].CanTell = false;
+                                    game.Tiles[x, y].Source = Images.Flag;
+                                    game.Tiles[x, y].CanTell = false;
 
+                                    await Task.Delay(WaitTime, cancelToken);
                                     continue;
                             }
                         }
-                    }
-
-                    // AI did 0 moves looking at every tile one by one we say it is stupid and we stop its turn
-                    if (locked)
-                    {
-                        await Task.Delay(WaitTime, cancelToken);
-                        break;
-                    }
-                }
                 
-                if (_ais[n].Score > _ais[bestIndex].Score)
+                if (_ais[n].Score > _ais[bestIndex].Score) bestIndex = n;
+
+                void NewGame()
                 {
-                    bestIndex = n;
+                    game.NewGame();
+                    int x = random.Next(game.GameGrid.Columns), y = random.Next(game.GameGrid.Rows);
+                    game.SetupMines(x, y);
+                    game.Reveal(x, y);
                 }
             }
                 
             best = _ais[bestIndex];
 
-            for (byte i = 0; i < bestIndex; ++i)
-            {
-                Mix(_ais[i]);
-                _ais[i].Mutate();
-            }
+            for (var i = 0; i < bestIndex; ++i) MakeChild(_ais[i]);
+            for (var i = bestIndex + 1; i < 100; ++i) MakeChild(_ais[i]);
 
-            for (byte i = (byte)(bestIndex + 1); i < 100; ++i)
+            // complicated and I don't know how to explain it
+            void MakeChild(NeuralNetwork killed)
             {
-                Mix(_ais[i]);
-                _ais[i].Mutate();
+                if (killed.Hidden.Count > best.Hidden.Count)
+                {
+                    var index = random.Next(killed.Hidden.Count);
+
+                    foreach (var input in killed.Hidden[index].Ins)
+                        input.Input.Outs.Remove(input);
+
+                    foreach (var output in killed.Hidden[index].Outs)
+                        output.Output.Ins.Remove(output);
+
+                    killed.Hidden.RemoveAt(index);
+                }
+                else if (killed.Hidden.Count < best.Hidden.Count) killed.AddHidden(random);
+
+                var hiddenLength = Math.Min(killed.Hidden.Count, best.Hidden.Count);
+                for (var i = 0; i < hiddenLength; ++i)
+                {
+                    if (killed.Hidden[i].Outs.Count > best.Hidden[i].Outs.Count) killed.Hidden[i].Outs[random.Next(killed.Hidden[i].Outs.Count)].Destroy();
+                    else if (killed.Hidden[i].Outs.Count < best.Hidden[i].Outs.Count) killed.AddNeuronOut(random, killed.Hidden[i]);
+
+                    var outsLength = Math.Min(killed.Hidden[i].Outs.Count, best.Hidden[i].Outs.Count);
+                    for (var j = 0; j < outsLength; ++j)
+                        killed.Hidden[i].Outs[j].Weight = (killed.Hidden[i].Outs[j].Weight + best.Hidden[i].Outs[j].Weight) / 2;
+
+                    if (killed.Hidden[i].FunctionIndex != best.Hidden[i].FunctionIndex && random.Next(2) == 0) killed.Hidden[i].FunctionIndex = best.Hidden[i].FunctionIndex;
+                }
+
+                for (var i = 0; i < 80; ++i)
+                {
+                    if (killed.Inputs[i].Outs.Count > best.Inputs[i].Outs.Count) killed.Inputs[i].Outs[random.Next(killed.Inputs[i].Outs.Count)].Destroy();
+                    else if (killed.Inputs[i].Outs.Count < best.Inputs[i].Outs.Count)
+                    {
+                        var outputIndex = random.Next(killed.Hidden.Count + 1);
+                        _ = new Connection(killed.Inputs[i], outputIndex == killed.Hidden.Count ? killed.Output : killed.Hidden[outputIndex]);
+                    }
+
+                    var outsLength = Math.Min(killed.Inputs[i].Outs.Count, best.Inputs[i].Outs.Count);
+                    for (var j = 0; j < outsLength; ++j)
+                        killed.Inputs[i].Outs[j].Weight = (killed.Inputs[i].Outs[j].Weight + best.Inputs[i].Outs[j].Weight) / 2;
+                }
+
+                killed.Mutate(random);
             }
         }
+        while (!cancelToken.IsCancellationRequested);
     }
 }
