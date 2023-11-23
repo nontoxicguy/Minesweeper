@@ -20,8 +20,6 @@ sealed partial class NeuralNetwork
 
     internal void LoadSetup()
     {
-        if (Inputs.Length != 80) throw new System.Text.Json.JsonException();
-
         // We do not store Input and Output fields in JSON so we assign them here
         foreach (var input in Inputs)
             foreach (var connection in input.Outs)

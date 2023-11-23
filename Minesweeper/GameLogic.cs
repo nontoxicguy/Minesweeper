@@ -208,14 +208,14 @@ sealed partial class Game : Window
 
     internal void Reveal(int x, int y)
     {
-        RevealCore(x, y);
+        Core(x, y);
         if (_safeSpotsLeft == 0)
         {
             Face.Source = Images.Cool;
             _timer.Stop();
         }
 
-        void RevealCore(int x, int y)
+        void Core(int x, int y)
         {
             Tiles[x, y].CanTell = false;
 
@@ -233,7 +233,7 @@ sealed partial class Game : Window
 
             Tiles[x, y].Source = Images.Numbers[neighbours.Count(c => Tiles[c.X, c.Y].IsBomb)];
 
-            Action<int, int> neighbourAction = Tiles[x, y].Source == Images.Numbers[0] ? RevealCore : (x, y) => Tiles[x, y].CanTell = true;
+            Action<int, int> neighbourAction = Tiles[x, y].Source == Images.Numbers[0] ? Core : (x, y) => Tiles[x, y].CanTell = true;
             foreach ((int neighbourX, int neighbourY) in neighbours)
                 if (Tiles[neighbourX, neighbourY].Source == Images.Normal) neighbourAction(neighbourX, neighbourY);
 

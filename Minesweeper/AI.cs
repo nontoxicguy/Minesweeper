@@ -56,7 +56,8 @@ sealed class AI
             
             for (var j = 0; j < 80; ++j)
                 _ais[i].Inputs[j] = new();
-
+                
+            InputNeuron.ResetOffset();
             _ais[i].Mutate(random);
         }
     }
@@ -77,6 +78,10 @@ sealed class AI
             success = false;
             return;
         }
+        finally
+        {
+            InputNeuron.ResetOffset();
+        }
 
         success = true;
 
@@ -84,6 +89,7 @@ sealed class AI
         for (var i = 1; i < _ais.Length; ++i)
         {
             (_ais[i] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!).LoadSetup();
+            InputNeuron.ResetOffset();
             _ais[i].Mutate(random);
         }
     }
