@@ -8,260 +8,259 @@ namespace Minesweeper;
 
 sealed partial class Game : Window
 {
-    AI? _ai;
+#nullable enable
+	AI? _ai;
+#nullable disable
 
-    System.Threading.CancellationTokenSource _trainCancel = new();
+	readonly Func<int, int> _randomBombLocationIndex = new Random().Next;
 
-    internal Tile[,] Tiles { get; private set; } = new Tile[25, 25];
+	System.Threading.CancellationTokenSource _trainCancel = new();
 
-    bool _start = true;
+	internal Tile[,] Tiles { get; private set; } = new Tile[25, 25];
 
-    readonly Microsoft.Win32.OpenFileDialog _aiSelect = new()
-    {
-        Filter = "JSON (*.json)|*.json",
-        InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
-    };
+	readonly Microsoft.Win32.OpenFileDialog _aiSelect = new()
+	{
+		Filter = "JSON (*.json)|*.json",
+		InitialDirectory = AppDomain.CurrentDomain.BaseDirectory + "AISaves"
+	};
 
-    readonly System.Timers.Timer _timer = new(1000);
+	readonly System.Timers.Timer _timer = new(1000);
 
-    short _time;
+	short _time;
 
-    int _totalMines = 125, _safeSpotsLeft = 500, _minesLeft = 0;
+	int _totalMines = 125, _safeSpotsLeft = 500, _minesLeft;
 
-    Game()
-    {
-        _timer.Elapsed += (_, _) => Dispatcher.Invoke(() =>
-        {
-            if (++_time == 999) _timer.Stop();
-            _timeText.Text = _time.ToString();
-        });
+	Game()
+	{
+		_timer.Elapsed += (_, _) => Dispatcher.Invoke(() =>
+		{
+			if (++_time == 999) _timer.Stop();
+			_timeText.Text = _time.ToString();
+		});
 
-        InitializeComponent();
-        Face.Source = Images.Happy;
-        SetupGrid();
-    }
-        
-    [STAThread]
-    static void Main() => new Application().Run(new Game());
+		InitializeComponent();
+		_face.Source = Images._happy;
+		SetupGrid();
+	}
 
-    void SetupGrid()
-    {
-        for (var y = 0; y < GameGrid.Rows; ++y)
-            for (var x = 0; x < GameGrid.Columns; ++x)
-            {
-                int copyX = x, copyY = y;
+	[STAThread]
+	static void Main() => new Application().Run(new Game());
 
-                Image image = new()
-                {
-                    Source = Images.Normal
-                };
+	void SetupGrid()
+	{
+		for (var y = 0; y < _grid.Rows; ++y)
+			for (var x = 0; x < _grid.Columns; ++x)
+			{
+				int copyX = x, copyY = y;
 
-                image.MouseRightButtonDown += (_, _) => // Flag
-                {
-                    if (Face.Source != Images.Happy) return;
+				Image image = new()
+				{
+					Source = Images._normal
+				};
 
-                    if (Tiles[copyX, copyY].Source == Images.Normal)
-                    {
-                        Tiles[copyX, copyY].Source = Images.Flag;
-                        _mines.Text = (--_minesLeft).ToString();
-                        Tiles[copyX, copyY].CanTell = false;
-                    }
-                    else if (Tiles[copyX, copyY].Source == Images.Flag)
-                    {
-                        Tiles[copyX, copyY].Source = Images.Normal;
-                        _mines.Text = (++_minesLeft).ToString();
-                        Tiles[copyX, copyY].CanTell = true;
-                    }
-                };
+				image.MouseLeftButtonUp += (_, _) => PlayerReveal(copyX, copyY);
+				image.MouseRightButtonDown += (_, _) => Flag(copyX, copyY);
 
-                image.MouseLeftButtonUp += (_, _) => // Reveal
-                {
-                    if (Face.Source != Images.Suspense) return;
-                    Face.Source = Images.Happy;
+				Tiles[x, y].SetupImage(image);
+				_grid.Children.Add(image);
+			}
+	}
 
-                    if (_start)
-                    {
-                        _timer.Start();
-                        SetupMines(copyX, copyY);
-                    }
-                    else if (Tiles[copyX, copyY].Source != Images.Normal) return;
-                    
-                    if (Tiles[copyX, copyY].IsBomb)
-                    {
-                        Face.Source = Images.Dead;
-                        _timer.Stop();
+	internal void SetupMines(int x, int y)
+	{
+		System.Collections.Generic.List<(byte, byte)> freeBombLocations = [];
+		for (byte row = 0; row < _grid.Rows; ++row)
+			for (byte col = 0; col < _grid.Columns; ++col)
+				if (Math.Abs(x - col) > 1 || Math.Abs(y - row) > 1) freeBombLocations.Add((col, row));
 
-                        foreach (var tile in Tiles)
-                            if (tile.IsBomb)
-                            {
-                                if (tile.Source == Images.Normal) tile.Source = Images.Bomb;
-                            }
-                            else if (tile.Source == Images.Flag) tile.Source = Images.FalseFlag;
-                    }
-                    else Reveal(copyX, copyY);
-                };
+		do
+		{
+			var bombIndex = _randomBombLocationIndex(freeBombLocations.Count);
+			Tiles[freeBombLocations[bombIndex].Item1, freeBombLocations[bombIndex].Item2].IsBomb = true;
+			freeBombLocations.RemoveAt(bombIndex);
+		}
+		while (++_minesLeft < _totalMines);
+	}
 
-                Tiles[x, y].SetupImage(image);
-                GameGrid.Children.Add(image);
-            }
-    }
+	internal void NewGame(object sender, RoutedEventArgs e)
+	{
+		_face.Source = Images._happy;
 
-    void NewGame(object _1, RoutedEventArgs _2)
-    {
-        Face.Source = Images.Happy;
+		_timeText.Text = "0";
+		_timer.Stop();
+		_time = 0;
 
-        _timeText.Text = "0";
-        _timer.Stop();
-        _time = 0;
+		_mines.Text = _totalMines.ToString();
 
-        _mines.Text = _totalMines.ToString();
+		for (var tileX = 0; tileX < _grid.Columns; ++tileX)
+			for (var tileY = 0; tileY < _grid.Rows; ++tileY)
+			{
+				Tiles[tileX, tileY].Source = Images._normal;
+				Tiles[tileX, tileY].CanTell = false;
+				Tiles[tileX, tileY].IsBomb = false;
+			}
 
-        NewGame();
-    }
+		_minesLeft = 0;
+		_safeSpotsLeft = Tiles.Length - _totalMines;
+	}
 
-    internal void NewGame()
-    {
-        _start = true;
+	void Suspense(object sender, MouseButtonEventArgs e)
+	{
+		if (_face.Source == Images._happy) _face.Source = Images._suspense;
+	}
 
-        for (byte x = 0; x < GameGrid.Columns; ++x)
-            for (byte y = 0; y < GameGrid.Rows; ++y)
-            {
-                Tiles[x, y].Source = Images.Normal;
-                Tiles[x, y].CanTell = false;
-                Tiles[x, y].IsBomb = false;
-            }
+	void PlayerReveal(int x, int y)
+	{
+		if (_face.Source != Images._suspense) return;
+		_face.Source = Images._happy;
 
-        _minesLeft = 0;
-        _safeSpotsLeft = Tiles.Length - _totalMines;
-    }
+		if (!_timer.Enabled)
+		{
+			_timer.Start();
+			SetupMines(x, y);
+		}
+		else if (Tiles[x, y].Source != Images._normal) return;
+		
+		if (Tiles[x, y].IsBomb)
+		{
+			_face.Source = Images._dead;
+			_timer.Stop();
 
-    void SaveAI(object _1, RoutedEventArgs _2) => _ai?.Save();
+			foreach (var tile in Tiles)
+				if (tile.IsBomb)
+				{
+					if (tile.Source == Images._normal) tile.Source = Images._bomb;
+				}
+				else if (tile.Source == Images._flag) tile.Source = Images._falseFlag;
+		}
+		else Reveal(x, y);
+	}
 
-    void LoadAI(object _1, RoutedEventArgs _2)
-    {
-        if (_aiSelect.ShowDialog() == true)
-        {
-            AI loaded = new(_aiSelect.FileName, out bool validJson);
-            if (validJson) _ai = loaded;
-        }
-    }
+	internal void Reveal(int x, int y)
+	{
+		RevealCore(x, y);
+		if (_safeSpotsLeft == 0)
+		{
+			_face.Source = Images._cool;
+			_timer.Stop();
+		}
+	}
 
-    void Options(object _1, RoutedEventArgs _2) => _options.Visibility = _options.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+	void RevealCore(int x, int y)
+	{
+		Tiles[x, y].CanTell = false;
 
-    void CanEnterText(object _, TextCompositionEventArgs e) => e.Handled = !char.IsDigit(e.Text, e.Text.Length - 1);
+		var neighbours = new (int X, int Y)[8]
+		{
+			(x - 1, y - 1),
+			(x, y - 1),
+			(x + 1, y - 1),
+			(x - 1, y),
+			(x + 1, y),
+			(x - 1, y + 1),
+			(x, y + 1),
+			(x + 1, y + 1)
+		}.Where(c => c.X >= 0 && c.Y >= 0 && c.X < _grid.Columns && c.Y < _grid.Rows);
 
-    void AISpeedChanged(object speedBox, SelectionChangedEventArgs __)
-    {
-        var newSpeed = (string)((ComboBoxItem)((ComboBox)speedBox).SelectedItem).Content;
+		Tiles[x, y].Source = Images._numbers[neighbours.Count(c => Tiles[c.X, c.Y].IsBomb)];
 
-        if (newSpeed == "Deactivated")
-        {
-            _trainCancel.Cancel();
-            _trainCancel = new();
-            return;
-        }
+		Action<int, int> neighbourAction = Tiles[x, y].Source == Images._numbers[0] ? RevealCore : (x, y) => Tiles[x, y].CanTell = true;
+		foreach ((int neighbourX, int neighbourY) in neighbours)
+			if (Tiles[neighbourX, neighbourY].Source == Images._normal) neighbourAction(neighbourX, neighbourY);
 
-#pragma warning disable 8509
-        (_ai ??= new()).WaitTime = newSpeed switch
+		--_safeSpotsLeft;
+	}
+
+	void Flag(int x, int y)
+	{
+		if (_face.Source != Images._happy) return;
+
+		if (Tiles[x, y].Source == Images._normal)
+		{
+			Tiles[x, y].Source = Images._flag;
+			_mines.Text = (--_minesLeft).ToString();
+			Tiles[x, y].CanTell = false;
+		}
+		else if (Tiles[x, y].Source == Images._flag)
+		{
+			Tiles[x, y].Source = Images._normal;
+			_mines.Text = (++_minesLeft).ToString();
+			Tiles[x, y].CanTell = true;
+		}
+	}
+
+	void ShowOptions(object sender, RoutedEventArgs e) => _options.Visibility = _options.Visibility == 0 ? Visibility.Hidden : Visibility.Visible;
+
+	void KeepDigits(object sender, TextCompositionEventArgs e)
+	{
+		var inputChar = e.Text[^1];
+		e.Handled = inputChar < 48 || inputChar > 57;
+	}
+
+	void ChangeSize(object sender, KeyEventArgs e)
+	{
+		var newSizeText = ((TextBox)sender).Text;
+		if (e.Key != Key.Enter || newSizeText == string.Empty) return;
+
+		var newSize = Math.Clamp(int.Parse(newSizeText), 5, 50);
+
+		Tiles = new Tile[newSize, newSize];
+
+		_grid.Children.Clear();
+		_grid.Rows = _grid.Columns = newSize;
+
+		if (Tiles.Length - 9 < _totalMines) _totalMines = Tiles.Length / 5;
+
+		SetupGrid();
+		NewGame(null!, null!);
+	}
+
+	void ChangeMineCount(object sender, KeyEventArgs e)
+	{
+		var newCountText = ((TextBox)sender).Text;
+		if (e.Key != Key.Enter || newCountText == string.Empty) return;
+
+		_totalMines = Math.Clamp(int.Parse(newCountText), 1, Tiles.Length - 9);
+
+		NewGame(null!, null!);
+	}
+
+	void ChangeAISpeed(object sender, SelectionChangedEventArgs e)
+	{
+		var newSpeed = (string)((ComboBoxItem)((ComboBox)sender).SelectedItem).Content;
+
+		if (newSpeed == "Deactivated")
+		{
+			_trainCancel.Cancel();
+			_trainCancel = new();
+			return;
+		}
+
+#pragma warning disable 8509 // We handle every speed in the ComboBox
+		(_ai ??= new())._waitTime = newSpeed switch
 #pragma warning restore 8509
-        {
-            "Human" => 800,
-            "Timelapse" => 75,
-            "Computer" => 1
-        };
+		{
+			"Human" => 800,
+			"Timelapse" => 75,
+			"Computer" => 1
+		};
 
-        _timer.Stop();
-        _timeText.Text = "0";
+		_timer.Stop();
+		_timeText.Text = "0";
 
-        Face.Source = Images.Happy;
+		_face.Source = Images._happy;
 
-        _ = _ai.Train(this, _trainCancel.Token);
-    }
+		_ = _ai.Train(this, _trainCancel.Token);
+	}
 
-    void ChangeMineCount(object mineBox, KeyEventArgs e)
-    {
-        var newCountText = ((TextBox)mineBox).Text;
-        if (e.Key != Key.Enter || newCountText == string.Empty) return;
+	void SaveAI(object sender, RoutedEventArgs e) => _ai?.Save();
 
-        _totalMines = Math.Clamp(short.Parse(newCountText), 1, Tiles.Length - 9);
-
-        NewGame(null!, null!);
-    }
-
-    void ChangeSize(object sizeBox, KeyEventArgs e)
-    {
-        var newSizeText = ((TextBox)sizeBox).Text;
-        if (e.Key != Key.Enter || newSizeText == string.Empty) return;
-
-        var newSize = Math.Clamp(int.Parse(newSizeText), 5, 50);
-
-        Tiles = new Tile[newSize, newSize];
-
-        GameGrid.Children.Clear();
-        GameGrid.Rows = GameGrid.Columns = newSize;
-
-        if (Tiles.Length - 9 < _totalMines) _totalMines = Tiles.Length / 5;
-
-        SetupGrid();
-        NewGame(null!, null!);
-    }
-
-    internal void Reveal(int x, int y)
-    {
-        Core(x, y);
-        if (_safeSpotsLeft == 0)
-        {
-            Face.Source = Images.Cool;
-            _timer.Stop();
-        }
-
-        void Core(int x, int y)
-        {
-            Tiles[x, y].CanTell = false;
-
-            var neighbours = new (int X, int Y)[8]
-            {
-                (x - 1, y - 1),
-                (x, y - 1),
-                (x + 1, y - 1),
-                (x - 1, y),
-                (x + 1, y),
-                (x - 1, y + 1),
-                (x, y + 1),
-                (x + 1, y + 1)
-            }.Where(c => c.X >= 0 && c.Y >= 0 && c.X < GameGrid.Columns && c.Y < GameGrid.Rows);
-
-            Tiles[x, y].Source = Images.Numbers[neighbours.Count(c => Tiles[c.X, c.Y].IsBomb)];
-
-            Action<int, int> neighbourAction = Tiles[x, y].Source == Images.Numbers[0] ? Core : (x, y) => Tiles[x, y].CanTell = true;
-            foreach ((int neighbourX, int neighbourY) in neighbours)
-                if (Tiles[neighbourX, neighbourY].Source == Images.Normal) neighbourAction(neighbourX, neighbourY);
-
-            --_safeSpotsLeft;
-        }
-    }
-
-    internal void SetupMines(int x, int y)
-    {
-        _start = false;
-
-        System.Collections.Generic.List<(byte, byte)> freeBombLocations = [];
-        for (byte row = 0; row < GameGrid.Rows; ++row)
-            for (byte col = 0; col < GameGrid.Columns; ++col)
-                if (Math.Abs(x - col) > 1 || Math.Abs(y - row) > 1) freeBombLocations.Add((col, row));
-
-        Random random = new();
-        do
-        {
-            var bombIndex = random.Next(freeBombLocations.Count);
-            Tiles[freeBombLocations[bombIndex].Item1, freeBombLocations[bombIndex].Item2].IsBomb = true;
-            freeBombLocations.RemoveAt(bombIndex);
-        }
-        while (++_minesLeft < _totalMines);
-    }
-
-    void Suspense(object _1, MouseButtonEventArgs _2)
-    {
-        if (Face.Source == Images.Happy) Face.Source = Images.Suspense;
-    }
+	void LoadAI(object sender, RoutedEventArgs e)
+	{
+		if (_aiSelect.ShowDialog() == true)
+		{
+			AI loaded = new(_aiSelect.FileName, out bool validJson);
+			if (validJson) _ai = loaded;
+		}
+	}
 }

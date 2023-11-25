@@ -1,20 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <UseWPF>true</UseWPF>
-    <ApplicationIcon>Images\Icon.ico</ApplicationIcon>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<ApplicationIcon>Images\Icon.ico</ApplicationIcon>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Images/*.*"/>
-    <Resource Include="Images/*.*"/>
-  </ItemGroup>
+	<ItemGroup>
+		<Resource Include="Images/*.*"/>
+	</ItemGroup>
 
-  <Target Name="AISaves maker"
-    AfterTargets="Build">
+	<Target
+		Name="AISaves maker"
+		AfterTargets="Build">
 
-    <MakeDir Directories="$(OutDir)AISaves"/>
-  </Target>
+		<MakeDir Directories="$(OutDir)AISaves"/>
+	</Target>
 </Project>

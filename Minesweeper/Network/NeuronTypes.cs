@@ -12,12 +12,12 @@ using Connections = System.Collections.Generic.List<Connection>;
 
 interface IInputNeuron // : INeuron
 {
-    float Value { get; set; }
+	float Value { get; set; }
 
-    Connections Outs { get; init; }
+	Connections Outs { get; init; }
 }
 
 interface IOutputNeuron // : INeuron
 {
-    Connections Ins { get; init; }
+	Connections Ins { get; init; }
 }

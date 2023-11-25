@@ -1,4 +1,4 @@
 Minesweeper/bin/
 Minesweeper/obj/
 .vscode/
-Minesweeper.sln
+*.sln
