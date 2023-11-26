@@ -43,8 +43,8 @@
 					BorderBrush="Black"
 					PreviewTextInput="KeepDigits"
 					KeyDown="ChangeSize"
-					Width="37"
-					Margin="1,6"/>
+					Width="35"
+					Margin="2,6"/>
 
 				<TextBlock
 					Margin="14,23"
@@ -56,8 +56,8 @@
 					BorderBrush="Black"
 					PreviewTextInput="KeepDigits"
 					KeyDown="ChangeMineCount"
-					Width="37"
-					Margin="40,6"/>
+					Width="35"
+					Margin="41,6"/>
 
 				<TextBlock
 					Margin="51,23"

@@ -8,9 +8,8 @@ namespace Minesweeper;
 
 sealed partial class Game : Window
 {
-#nullable enable
-	AI? _ai;
-#nullable disable
+#region fields and properties
+	AI _ai;
 
 	readonly Func<int, int> _randomBombLocationIndex = new Random().Next;
 
@@ -29,6 +28,11 @@ sealed partial class Game : Window
 	short _time;
 
 	int _totalMines = 125, _safeSpotsLeft = 500, _minesLeft;
+#endregion
+
+#region entry point and game initialization
+	[STAThread]
+	static void Main() => new Application().Run(new Game());
 
 	Game()
 	{
@@ -42,9 +46,6 @@ sealed partial class Game : Window
 		_face.Source = Images._happy;
 		SetupGrid();
 	}
-
-	[STAThread]
-	static void Main() => new Application().Run(new Game());
 
 	void SetupGrid()
 	{
@@ -61,7 +62,7 @@ sealed partial class Game : Window
 				image.MouseLeftButtonUp += (_, _) => PlayerReveal(copyX, copyY);
 				image.MouseRightButtonDown += (_, _) => Flag(copyX, copyY);
 
-				Tiles[x, y].SetupImage(image);
+				Tiles[x, y] = new(image);
 				_grid.Children.Add(image);
 			}
 	}
@@ -103,7 +104,9 @@ sealed partial class Game : Window
 		_minesLeft = 0;
 		_safeSpotsLeft = Tiles.Length - _totalMines;
 	}
+#endregion
 
+#region reveal and flag
 	void Suspense(object sender, MouseButtonEventArgs e)
 	{
 		if (_face.Source == Images._happy) _face.Source = Images._suspense;
@@ -138,37 +141,37 @@ sealed partial class Game : Window
 
 	internal void Reveal(int x, int y)
 	{
-		RevealCore(x, y);
+		void Core(int x, int y)
+		{
+			Tiles[x, y].CanTell = false;
+
+			var neighbours = new (int X, int Y)[8]
+			{
+				(x - 1, y - 1),
+				(x, y - 1),
+				(x + 1, y - 1),
+				(x - 1, y),
+				(x + 1, y),
+				(x - 1, y + 1),
+				(x, y + 1),
+				(x + 1, y + 1)
+			}.Where(c => c.X >= 0 && c.Y >= 0 && c.X < _grid.Columns && c.Y < _grid.Rows);
+
+			Tiles[x, y].Source = Images._numbers[neighbours.Count(c => Tiles[c.X, c.Y].IsBomb)];
+
+			Action<int, int> neighbourAction = Tiles[x, y].Source == Images._numbers[0] ? Core : (x, y) => Tiles[x, y].CanTell = true;
+			foreach ((int neighbourX, int neighbourY) in neighbours)
+				if (Tiles[neighbourX, neighbourY].Source == Images._normal) neighbourAction(neighbourX, neighbourY);
+
+			--_safeSpotsLeft;
+		}
+
+		Core(x, y);
 		if (_safeSpotsLeft == 0)
 		{
 			_face.Source = Images._cool;
 			_timer.Stop();
 		}
-	}
-
-	void RevealCore(int x, int y)
-	{
-		Tiles[x, y].CanTell = false;
-
-		var neighbours = new (int X, int Y)[8]
-		{
-			(x - 1, y - 1),
-			(x, y - 1),
-			(x + 1, y - 1),
-			(x - 1, y),
-			(x + 1, y),
-			(x - 1, y + 1),
-			(x, y + 1),
-			(x + 1, y + 1)
-		}.Where(c => c.X >= 0 && c.Y >= 0 && c.X < _grid.Columns && c.Y < _grid.Rows);
-
-		Tiles[x, y].Source = Images._numbers[neighbours.Count(c => Tiles[c.X, c.Y].IsBomb)];
-
-		Action<int, int> neighbourAction = Tiles[x, y].Source == Images._numbers[0] ? RevealCore : (x, y) => Tiles[x, y].CanTell = true;
-		foreach ((int neighbourX, int neighbourY) in neighbours)
-			if (Tiles[neighbourX, neighbourY].Source == Images._normal) neighbourAction(neighbourX, neighbourY);
-
-		--_safeSpotsLeft;
 	}
 
 	void Flag(int x, int y)
@@ -188,7 +191,9 @@ sealed partial class Game : Window
 			Tiles[x, y].CanTell = true;
 		}
 	}
+#endregion
 
+#region options menu
 	void ShowOptions(object sender, RoutedEventArgs e) => _options.Visibility = _options.Visibility == 0 ? Visibility.Hidden : Visibility.Visible;
 
 	void KeepDigits(object sender, TextCompositionEventArgs e)
@@ -212,7 +217,7 @@ sealed partial class Game : Window
 		if (Tiles.Length - 9 < _totalMines) _totalMines = Tiles.Length / 5;
 
 		SetupGrid();
-		NewGame(null!, null!);
+		NewGame(null, null);
 	}
 
 	void ChangeMineCount(object sender, KeyEventArgs e)
@@ -222,7 +227,7 @@ sealed partial class Game : Window
 
 		_totalMines = Math.Clamp(int.Parse(newCountText), 1, Tiles.Length - 9);
 
-		NewGame(null!, null!);
+		NewGame(null, null);
 	}
 
 	void ChangeAISpeed(object sender, SelectionChangedEventArgs e)
@@ -263,4 +268,5 @@ sealed partial class Game : Window
 			if (validJson) _ai = loaded;
 		}
 	}
+#endregion
 }

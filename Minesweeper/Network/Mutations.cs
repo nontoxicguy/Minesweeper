@@ -24,7 +24,7 @@ partial class NeuralNetwork
 					return;
 				}
 
-				connections.ElementAt(random.Next(connections.Count()))._weight += random.NextSingle() * 2 - 1;
+				connections.ElementAt(random.Next(connections.Count())).Weight += random.NextSingle() * 2 - 1;
 				return;
 			default: // ModifyActivationFunction
 				if (Hidden.Count == 0)

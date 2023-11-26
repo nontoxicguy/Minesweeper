@@ -7,13 +7,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Resource Include="Images/*.*"/>
+		<Resource Include="Images/*"/>
 	</ItemGroup>
 
-	<Target
-		Name="AISaves maker"
-		AfterTargets="Build">
-
+	<Target Name="AISaves maker" AfterTargets="Build">
 		<MakeDir Directories="$(OutDir)AISaves"/>
 	</Target>
 </Project>

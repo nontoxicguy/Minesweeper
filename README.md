@@ -17,7 +17,7 @@ I've no idea if this thing works, I hope it does.
 # requirements
 To run the game you must have windows. To build (so test in any way) you must have .NET SDK 8.0 installed. I didn't know about publish builds when I published the itch.io game so to run on itch you need .NET SDK 6.0.
 
-It is also worth noting that the repository got no .sln file. You will have to create one yourself and add the project to it. You can use<br>
-`dotnet new sln`
-<br>and<br>
-`dotnet sln add Minesweeper/Minesweeper.csproj`
+It is also worth noting that the repository got no .sln file. You will have to create one yourself and add the project to it. You can use
+<br>`dotnet new sln`
+<br>and
+<br>`dotnet sln add Minesweeper/Minesweeper.csproj`

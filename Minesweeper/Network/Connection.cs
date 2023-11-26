@@ -1,17 +1,19 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Minesweeper.AINetwork;
 
 sealed class Connection(float weight)
 {
-	internal float _weight = weight;
+	[JsonInclude]
+	public float Weight = weight;
 
 	internal IInputNeuron _input;
 	internal IOutputNeuron _output;
 
-#nullable enable
+#nullable enable annotations
 	string? _jsonId;
-#nullable disable
+#nullable disable annotations
 
 	internal Connection(IInputNeuron input, IOutputNeuron output) : this(1)
 	{
@@ -25,7 +27,7 @@ sealed class Connection(float weight)
 		_output.Ins.Remove(this);
 	}
 
-	internal sealed class Converter : System.Text.Json.Serialization.JsonConverter<Connection>
+	internal sealed class Converter : JsonConverter<Connection>
 	{
 		int _currentId;
 		
@@ -35,9 +37,7 @@ sealed class Connection(float weight)
 		/// Dummy method
 		/// </summary>
 		/// <returns>null</returns>
-#nullable enable
-		public override Connection? Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options) => null;
-#nullable disable
+		public override Connection Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options) => null;
 
 		public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions options)
 		{
@@ -46,7 +46,7 @@ sealed class Connection(float weight)
 			if (value._jsonId == null)
 			{
 				writer.WriteString("$id", value._jsonId = (++_currentId).ToString());
-				writer.WriteNumber("Weight", value._weight);
+				writer.WriteNumber("Weight", value.Weight);
 			}
 			else
 			{

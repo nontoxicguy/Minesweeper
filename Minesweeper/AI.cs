@@ -45,7 +45,6 @@ sealed class AI
 	},
 	_deserializeOptions = new()
 	{
-		IncludeFields = true,
 		ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
 	};
 
@@ -72,9 +71,13 @@ sealed class AI
 	{
 		var json = ReadAllText(jsonPath);
 
+#if DEBUG
+		(_ais[0] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)).LoadSetup();
+		InputNeuron.ResetOffset();
+#else
 		try
 		{
-			(_ais[0] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!).LoadSetup();
+			(_ais[0] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)).LoadSetup();
 		}
 		catch
 		{
@@ -86,13 +89,14 @@ sealed class AI
 		{
 			InputNeuron.ResetOffset();
 		}
+#endif
 
 		success = true;
 
 		// I chose the easy solution to make a deep copy
 		for (var i = 1; i < 100; ++i)
 		{
-			(_ais[i] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)!).LoadSetup();
+			(_ais[i] = JsonSerializer.Deserialize<NeuralNetwork>(json, _deserializeOptions)).LoadSetup();
 			InputNeuron.ResetOffset();
 			_ais[i].Mutate(_random);
 		}
@@ -116,7 +120,7 @@ sealed class AI
 	{
 		void NewGame()
 		{
-			game.NewGame(null!, null!);
+			game.NewGame(null, null);
 			int x = _random.Next(game._grid.Columns), y = _random.Next(game._grid.Rows);
 			game.SetupMines(x, y);
 			game.Reveal(x, y);
@@ -180,6 +184,8 @@ sealed class AI
 					_best = ai;
 				}
 			}
+			
+			bestScore = 0;
 
 			// we mix _best with every other neural network
 			foreach (var ai in _ais)
@@ -208,7 +214,7 @@ sealed class AI
 
 					var outsLength = Math.Min(ai.Hidden[i].Outs.Count, _best.Hidden[i].Outs.Count);
 					for (var j = 0; j < outsLength; ++j)
-						ai.Hidden[i].Outs[j]._weight = (ai.Hidden[i].Outs[j]._weight + _best.Hidden[i].Outs[j]._weight) / 2;
+						ai.Hidden[i].Outs[j].Weight = (ai.Hidden[i].Outs[j].Weight + _best.Hidden[i].Outs[j].Weight) / 2;
 
 					if (ai.Hidden[i].FunctionIndex != _best.Hidden[i].FunctionIndex && _random.Next(2) == 0) ai.Hidden[i].FunctionIndex = _best.Hidden[i].FunctionIndex;
 				}
@@ -224,7 +230,7 @@ sealed class AI
 
 					var outsLength = Math.Min(ai.Inputs[i].Outs.Count, _best.Inputs[i].Outs.Count);
 					for (var j = 0; j < outsLength; ++j)
-						ai.Inputs[i].Outs[j]._weight = (ai.Inputs[i].Outs[j]._weight + _best.Inputs[i].Outs[j]._weight) / 2;
+						ai.Inputs[i].Outs[j].Weight = (ai.Inputs[i].Outs[j].Weight + _best.Inputs[i].Outs[j].Weight) / 2;
 				}
 
 				ai.Mutate(_random);

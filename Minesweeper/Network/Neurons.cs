@@ -9,22 +9,23 @@ sealed class InputNeuron : IInputNeuron
 	[JsonIgnore]
 	public float Value { get; set; }
 
-	internal readonly sbyte _offsetX, _offsetY;
-
 	public Connections Outs { get; init; } = [];
 
-	// Little system that sets offsets automatically
-	static byte _currentOffset;
+#region offsets
+	internal readonly sbyte _offsetX, _offsetY;
+
+	static byte s_currentOffset;
 
 	public InputNeuron()
 	{
-		_offsetX = (sbyte)(_currentOffset % 9 - 4);
-		_offsetY = (sbyte)(_currentOffset / 9 - 4);
+		_offsetX = (sbyte)(s_currentOffset % 9 - 4);
+		_offsetY = (sbyte)(s_currentOffset / 9 - 4);
 		
-		if (++_currentOffset == 40) ++_currentOffset;
+		if (++s_currentOffset == 40) ++s_currentOffset;
 	}
 	
-	internal static void ResetOffset() => _currentOffset = 0;
+	internal static void ResetOffset() => s_currentOffset = 0;
+#endregion
 }
 
 sealed class HiddenNeuron(int layer, byte functionIndex) : IInputNeuron, IOutputNeuron
@@ -32,15 +33,15 @@ sealed class HiddenNeuron(int layer, byte functionIndex) : IInputNeuron, IOutput
 	[JsonIgnore]
 	public float Value { get; set; }
 
+	public Connections Ins { get; init; } = [];
+
+	public Connections Outs { get; init; } = [];
+
 	[JsonInclude]
 	public readonly int Layer = layer;
 
 	[JsonInclude]
 	public byte FunctionIndex = functionIndex;
-
-	public Connections Ins { get; init; } = [];
-
-	public Connections Outs { get; init; } = [];
 }
 
 sealed class OutputNeuron : IOutputNeuron

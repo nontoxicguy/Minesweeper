@@ -49,8 +49,8 @@ internal sealed partial class NeuralNetwork
 	{
 		foreach (var layer in Hidden.GroupBy(h => h.Layer))
 			foreach (var neuron in layer)
-				neuron.Value = s_activationFunctions[neuron.FunctionIndex](neuron.Ins.Sum(i => i._input.Value * i._weight));
+				neuron.Value = s_activationFunctions[neuron.FunctionIndex](neuron.Ins.Sum(i => i._input.Value * i.Weight));
 
-		return (byte)(Output.Ins.Sum(c => c._input.Value * c._weight) % 3);
+		return (byte)(Output.Ins.Sum(c => c._input.Value * c.Weight) % 3);
 	}
 }
